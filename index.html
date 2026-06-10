@@ -11,35 +11,35 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <style>
 :root {
-  /* ── Pure white light mode with sharp contrast ── */
-  --bg: #f0f2f5;
-  --surface: #ffffff;
-  --surface2: #f7f8fa;
-  --surface3: #eef0f3;
-  --border: #d0d4db;
-  --border-strong: #9aa3b0;
-  --text: #0d1117;
-  --text-sub: #2d3748;
-  --text-muted: #5a6578;
-  --text-dim: #8c97a6;
-  /* Accent: deep orange-red — high contrast on white */
-  --accent: #c8340a;
-  --accent-hover: #a02808;
-  --accent-light: #fff2ee;
-  /* Accent2: strong royal blue */
-  --accent2: #1a56c4;
-  --accent2-light: #e8f0fd;
-  /* Accent3: deep forest green */
-  --accent3: #0f6b3c;
-  --accent3-light: #e6f4ed;
-  --warn: #9a5c00;
-  --warn-light: #fff8e6;
-  --danger: #b51c18;
-  --danger-light: #fdf0ef;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow: 0 4px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.13), 0 4px 12px rgba(0,0,0,0.08);
-  --radius: 10px;
+  /* ── OLD MONEY: Navy + Cream ── */
+  --bg:            #EDE7D9;
+  --surface:       #F5F0E8;
+  --surface2:      #EDE7D9;
+  --surface3:      #E2D9C8;
+  --border:        #C8BFA8;
+  --border-strong: #9A9080;
+  --text:          #1B2A4A;
+  --text-sub:      #2E4370;
+  --text-muted:    #5C6C88;
+  --text-dim:      #8E9BB0;
+  /* Accent: antique gold */
+  --accent:        #8B6914;
+  --accent-hover:  #6F5310;
+  --accent-light:  #FAF3E0;
+  /* Accent2: navy blue */
+  --accent2:       #1B2A4A;
+  --accent2-light: #D8E0EE;
+  /* Accent3: forest */
+  --accent3:       #2E6B42;
+  --accent3-light: #D8EEE1;
+  --warn:          #8B5E00;
+  --warn-light:    #FDF3DC;
+  --danger:        #8B1A1A;
+  --danger-light:  #FAECEC;
+  --shadow-sm: 0 1px 3px rgba(27,42,74,0.10), 0 1px 2px rgba(27,42,74,0.06);
+  --shadow:    0 4px 16px rgba(27,42,74,0.10), 0 2px 6px rgba(27,42,74,0.06);
+  --shadow-lg: 0 12px 40px rgba(27,42,74,0.13), 0 4px 12px rgba(27,42,74,0.08);
+  --radius:    10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
 }
@@ -57,8 +57,8 @@ body {
 
 /* ── TOPBAR ─────────────────────────────────────── */
 .topbar {
-  background: #ffffff;
-  color: var(--text);
+  background: #1B2A4A;
+  color: #F5F0E8;
   padding: 0 32px;
   height: 52px;
   display: flex;
@@ -67,8 +67,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 200;
-  border-bottom: 2px solid var(--accent);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-bottom: 2px solid #8B6914;
+  box-shadow: 0 2px 12px rgba(27,42,74,0.25);
 }
 
 .topbar-brand {
@@ -77,13 +77,13 @@ body {
   gap: 10px;
   font-family: 'DM Serif Display', serif;
   font-size: 18px;
-  color: var(--text);
+  color: #F5F0E8;
   letter-spacing: -0.02em;
 }
 
 .topbar-brand-icon {
   width: 28px; height: 28px;
-  background: var(--accent);
+  background: #1B2A4A;
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
@@ -94,13 +94,13 @@ body {
 .topbar-tag {
   font-family: 'DM Mono', monospace;
   font-size: 10px;
-  color: var(--text-muted);
+  color: rgba(245,240,232,0.55);
   letter-spacing: 0.1em;
 }
 
 /* ── HERO BAND ───────────────────────────────────── */
 .hero-band {
-  background: var(--text);
+  background: #1B2A4A;
   padding: 20px 32px 24px;
   position: relative;
   overflow: hidden;
@@ -140,7 +140,7 @@ body {
   content: '';
   width: 24px;
   height: 2px;
-  background: var(--accent);
+  background: #1B2A4A;
   display: inline-block;
 }
 
@@ -160,7 +160,7 @@ body {
 }
 
 .hero-desc {
-  color: rgba(255,255,255,0.55);
+  color: rgba(245,240,232,0.65);
   font-size: 14px;
   max-width: 520px;
   line-height: 1.7;
@@ -358,7 +358,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.field:hover { border-color: var(--accent2); }
+.field:hover { border-color: #1B2A4A; }
 .field:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 3px rgba(26,86,196,0.12);
@@ -1657,7 +1657,7 @@ code {
   margin-right: 2px;
   transition: background 0.3s;
 }
-.session-dot.active { background: var(--accent3); }
+.session-dot.active { background: #8B6914; }
 
 /* Recent sessions list */
 .recent-sessions {
@@ -1940,25 +1940,25 @@ code {
 
 /* ══ DARK TOGGLE ══ */
 .dark-toggle {
-  background:none; border:1px solid var(--border-strong); border-radius:20px;
-  padding:3px 9px; font-size:13px; cursor:pointer; color:var(--text-muted);
+  background:none; border:1px solid rgba(255,255,255,0.2); border-radius:20px;
+  padding:3px 9px; font-size:13px; cursor:pointer; color:rgba(245,240,232,0.7);
   transition:all .2s; line-height:1.4; flex-shrink:0;
 }
-.dark-toggle:hover { border-color:var(--accent2); color:var(--text); }
+.dark-toggle:hover { border-color:rgba(255,255,255,0.5); color:#F5F0E8; }
 
 /* ══ DARK MODE ══ */
 [data-theme="dark"] {
-  --bg:#0f1117; --surface:#1a1e27; --surface2:#1e2330; --surface3:#252b38;
-  --border:#2e3547; --border-strong:#4a5568;
-  --text:#e8ecf0; --text-sub:#b0bac8; --text-muted:#7a8799; --text-dim:#4a5568;
-  --accent:#e8502a; --accent-hover:#f06040; --accent-light:#2a1810;
-  --accent2:#4a90e2; --accent2-light:#0d1e35;
-  --accent3:#34c27a; --accent3-light:#0a2318;
-  --warn:#d4a017; --warn-light:#2a2000;
-  --danger:#e05555; --danger-light:#2a1010;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.4);
-  --shadow:0 4px 16px rgba(0,0,0,.5);
-  --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+  --bg:#111827; --surface:#1A2235; --surface2:#1E2A40; --surface3:#243050;
+  --border:#2E3F60; --border-strong:#4A5F88;
+  --text:#EDE7D9; --text-sub:#C8BFA8; --text-muted:#8E9BB0; --text-dim:#4A5568;
+  --accent:#C9A227; --accent-hover:#A8841E; --accent-light:#2A2000;
+  --accent2:#7BA3D8; --accent2-light:#0D1E35;
+  --accent3:#5AAF7A; --accent3-light:#0A2318;
+  --warn:#D4A017; --warn-light:#2A2000;
+  --danger:#E05555; --danger-light:#2A1010;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.5);
+  --shadow:0 4px 16px rgba(0,0,0,.6);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.7);
 }
 
 /* ══ FIELD VALIDATION ══ */
