@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v16 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -2015,9 +2015,314 @@ code {
   @page { size:A4 portrait; margin:18mm 15mm; }
 }
 
+
+/* ══════════════════════════════════════════════════
+   SUPABASE AUTH UI
+══════════════════════════════════════════════════ */
+
+/* ── Login Modal ── */
+.auth-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000;
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.auth-modal {
+  background:var(--surface); border-radius:var(--radius-lg);
+  padding:36px 32px; width:100%; max-width:400px;
+  box-shadow:var(--shadow-lg); border:1.5px solid var(--border);
+  position:relative;
+}
+.auth-logo {
+  display:flex; align-items:center; gap:10px;
+  font-family:'DM Serif Display',serif; font-size:22px;
+  color:var(--text); margin-bottom:4px;
+}
+.auth-logo-icon {
+  width:34px; height:34px; background:var(--accent);
+  border-radius:8px; display:flex; align-items:center;
+  justify-content:center; font-size:16px; color:white;
+}
+.auth-tagline {
+  font-size:12px; color:var(--text-muted); margin-bottom:28px;
+}
+.auth-tabs {
+  display:flex; gap:0; margin-bottom:24px;
+  border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  overflow:hidden;
+}
+.auth-tab {
+  flex:1; padding:9px; font-size:12.5px; font-weight:700;
+  font-family:'DM Sans',sans-serif; cursor:pointer;
+  background:var(--surface2); color:var(--text-muted); border:none;
+  transition:all .15s;
+}
+.auth-tab.active { background:var(--text); color:white; }
+.auth-field-wrap { margin-bottom:14px; }
+.auth-label {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.07em; color:var(--text-sub); margin-bottom:5px;
+  display:block; font-family:'DM Mono',monospace;
+}
+.auth-input {
+  width:100%; padding:10px 14px; border:1.5px solid var(--border);
+  border-radius:var(--radius-sm); font-size:13.5px;
+  font-family:'DM Sans',sans-serif; color:var(--text);
+  background:var(--surface2); outline:none; transition:.15s;
+}
+.auth-input:focus { border-color:var(--accent2); background:white; }
+.auth-btn {
+  width:100%; padding:12px; background:var(--accent); color:white;
+  border:none; border-radius:var(--radius-sm); font-size:14px;
+  font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;
+  transition:.18s; margin-top:6px; letter-spacing:.02em;
+}
+.auth-btn:hover { background:var(--accent-hover); transform:translateY(-1px); }
+.auth-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.auth-err {
+  display:none; background:var(--danger-light); color:var(--danger);
+  border:1px solid rgba(192,32,28,.25); border-radius:var(--radius-sm);
+  padding:10px 12px; font-size:12px; margin-bottom:12px; font-weight:500;
+}
+.auth-ok {
+  display:none; background:var(--accent3-light); color:var(--accent3);
+  border:1px solid rgba(26,122,74,.25); border-radius:var(--radius-sm);
+  padding:10px 12px; font-size:12px; margin-bottom:12px; font-weight:500;
+}
+.auth-divider {
+  display:flex; align-items:center; gap:10px; margin:16px 0;
+}
+.auth-divider-line { flex:1; height:1px; background:var(--border); }
+.auth-divider-label { font-size:11px; color:var(--text-dim); }
+.auth-google-btn {
+  width:100%; padding:10px; background:white; color:#1B2A4A;
+  border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  gap:8px; transition:.15s;
+}
+.auth-google-btn:hover { border-color:var(--border-strong); background:var(--surface2); }
+.auth-skip {
+  text-align:center; margin-top:16px; font-size:12px; color:var(--text-muted);
+}
+.auth-skip a {
+  color:var(--accent2); font-weight:700; cursor:pointer; text-decoration:none;
+}
+.auth-skip a:hover { text-decoration:underline; }
+
+/* ── User Profile Chip (topbar) ── */
+.user-chip {
+  display:flex; align-items:center; gap:7px;
+  padding:4px 10px 4px 6px;
+  background:rgba(255,255,255,0.08); border-radius:20px;
+  border:1px solid rgba(255,255,255,0.15); cursor:pointer;
+  font-size:12px; color:rgba(245,240,232,0.85);
+  transition:.15s; position:relative; flex-shrink:0;
+}
+.user-chip:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.3); }
+.user-avatar {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--accent); color:white;
+  font-size:11px; font-weight:700; font-family:'DM Mono',monospace;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.user-dropdown {
+  position:absolute; top:calc(100% + 8px); right:0;
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow-lg);
+  min-width:220px; z-index:9000; overflow:hidden;
+  display:none;
+}
+.user-dropdown.open { display:block; }
+.user-dd-head {
+  padding:14px 16px; border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.user-dd-name { font-size:13px; font-weight:700; color:var(--text); }
+.user-dd-email { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px; }
+.user-dd-item {
+  padding:10px 16px; font-size:13px; color:var(--text-sub);
+  cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:.12s;
+}
+.user-dd-item:hover { background:var(--surface2); color:var(--text); }
+.user-dd-sep { height:1px; background:var(--border); margin:2px 0; }
+.user-dd-item.danger { color:var(--danger); }
+.user-dd-item.danger:hover { background:var(--danger-light); }
+
+/* ── Cloud Save Button ── */
+.topbar-btn-cloud {
+  background:rgba(27,74,138,.15) !important;
+  border-color:rgba(27,74,138,.4) !important;
+  color:#93c5fd !important;
+}
+.topbar-btn-cloud:hover { background:rgba(27,74,138,.3) !important; }
+.topbar-btn-cloud.syncing { animation:pulse 1s infinite; }
+
+/* Login gate overlay */
+.login-gate {
+  display:none; position:fixed; inset:0;
+  background:rgba(14,22,32,0.85); z-index:8900;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(8px);
+}
+.login-gate.show { display:flex; }
+.login-gate-box {
+  background:var(--surface); border-radius:var(--radius-lg);
+  padding:32px; max-width:360px; text-align:center;
+  border:1.5px solid var(--border); box-shadow:var(--shadow-lg);
+}
+.login-gate-icon { font-size:42px; margin-bottom:12px; }
+.login-gate-title {
+  font-family:'DM Serif Display',serif; font-size:22px;
+  color:var(--text); margin-bottom:8px;
+}
+.login-gate-desc { font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.6; }
+
+/* Supabase Config Modal */
+.supabase-config-modal {
+  position:fixed; inset:0; background:rgba(0,0,0,.6);
+  z-index:9500; display:none; align-items:center; justify-content:center;
+}
+.supabase-config-modal.open { display:flex; }
+.supabase-config-box {
+  background:var(--surface); border-radius:var(--radius-lg);
+  padding:28px 28px 22px; max-width:480px; width:100%;
+  box-shadow:var(--shadow-lg); border:1.5px solid var(--border);
+}
+.sb-config-title { font-family:'DM Serif Display',serif; font-size:20px; color:var(--text); margin-bottom:6px; }
+.sb-config-sub { font-size:12px; color:var(--text-muted); margin-bottom:20px; line-height:1.6; }
+
+/* Audit log section */
+.audit-section { margin-top:20px; }
+.audit-title {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--text-dim); font-family:'DM Mono',monospace;
+  margin-bottom:8px;
+}
+.audit-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:9px 0; border-bottom:1px solid rgba(216,212,204,.4);
+  font-size:12px;
+}
+.audit-item:last-child { border-bottom:none; }
+.audit-avatar {
+  width:26px; height:26px; border-radius:50%; background:var(--accent2);
+  color:white; font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; font-family:'DM Mono',monospace;
+}
+.audit-info { flex:1; }
+.audit-user { font-weight:700; color:var(--text); }
+.audit-action { color:var(--text-muted); }
+.audit-time { font-size:10px; color:var(--text-dim); font-family:'DM Mono',monospace; margin-top:2px; }
+
+/* Cloud sessions */
+.cloud-session-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border:1px solid var(--border);
+  border-radius:var(--radius-sm); margin-bottom:6px;
+  background:var(--surface2); cursor:pointer;
+  transition:.12s;
+}
+.cloud-session-item:hover { border-color:var(--accent2); background:var(--accent2-light); }
+.cloud-session-icon { font-size:18px; flex-shrink:0; }
+.cloud-session-info { flex:1; }
+.cloud-session-name { font-size:13px; font-weight:700; color:var(--text); }
+.cloud-session-meta { font-size:10.5px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px; }
+.cloud-session-user { font-size:10px; color:var(--accent2); margin-top:2px; }
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════
+     SUPABASE SDK
+══════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ══════════════════════════════════════════════
+     SUPABASE CONFIG MODAL (first-time setup)
+══════════════════════════════════════════════ -->
+<div class="supabase-config-modal" id="modal-sb-config">
+  <div class="supabase-config-box">
+    <div class="sb-config-title">⚙️ Konfigurasi Supabase</div>
+    <div class="sb-config-sub">
+      Masukkan URL dan Anon Key dari project Supabase Anda untuk mengaktifkan sync cloud &amp; login.<br>
+      Data ini disimpan di <code>localStorage</code> browser Anda saja.
+      <br><a href="https://supabase.com/dashboard" target="_blank" style="color:var(--accent2)">Buat project Supabase gratis →</a>
+    </div>
+    <div class="auth-field-wrap">
+      <label class="auth-label">Supabase Project URL</label>
+      <input class="auth-input" id="sb-url-input" type="text" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="auth-field-wrap">
+      <label class="auth-label">Supabase Anon Key</label>
+      <input class="auth-input" id="sb-key-input" type="text" placeholder="eyJh...">
+    </div>
+    <div id="sb-config-err" style="display:none;color:var(--danger);font-size:12px;margin-bottom:10px"></div>
+    <button class="auth-btn" onclick="saveSbConfig()">Simpan &amp; Hubungkan</button>
+    <div class="auth-skip"><a onclick="closeSbConfig()">Lewati — pakai localStorage saja</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     AUTH MODAL (Login / Register)
+══════════════════════════════════════════════ -->
+<div class="auth-modal-overlay" id="modal-auth" style="display:none">
+  <div class="auth-modal">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">⬡</div>
+      TERAS
+    </div>
+    <div class="auth-tagline">Masuk untuk sync data antar perangkat &amp; audit trail</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Masuk</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Daftar</button>
+    </div>
+
+    <div id="auth-err" class="auth-err"></div>
+    <div id="auth-ok" class="auth-ok"></div>
+
+    <div id="auth-form-login">
+      <div class="auth-field-wrap">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="auth-email" type="email" placeholder="anda@email.com" autocomplete="email">
+      </div>
+      <div class="auth-field-wrap">
+        <label class="auth-label">Password</label>
+        <input class="auth-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="auth-btn" id="auth-login-btn" onclick="doLogin()">Masuk ke TERAS</button>
+      <div class="auth-divider">
+        <div class="auth-divider-line"></div>
+        <div class="auth-divider-label">atau</div>
+        <div class="auth-divider-line"></div>
+      </div>
+      <button class="auth-google-btn" onclick="doGoogleLogin()">
+        <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>
+        Lanjutkan dengan Google
+      </button>
+    </div>
+
+    <div id="auth-form-register" style="display:none">
+      <div class="auth-field-wrap">
+        <label class="auth-label">Nama Lengkap</label>
+        <input class="auth-input" id="auth-fullname" type="text" placeholder="Nama Anda">
+      </div>
+      <div class="auth-field-wrap">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="auth-email-reg" type="email" placeholder="anda@email.com" autocomplete="email">
+      </div>
+      <div class="auth-field-wrap">
+        <label class="auth-label">Password</label>
+        <input class="auth-input" id="auth-password-reg" type="password" placeholder="Min. 6 karakter" autocomplete="new-password">
+      </div>
+      <button class="auth-btn" id="auth-reg-btn" onclick="doRegister()">Buat Akun</button>
+    </div>
+
+    <div class="auth-skip"><a onclick="skipAuth()">Lewati — tidak masuk sekarang</a></div>
+  </div>
+</div>
 
 <!-- TOPBAR -->
 <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:8px 16px;background:var(--accent);color:white;font-weight:600;border-radius:0 0 6px 0;text-decoration:none">Langsung ke konten utama</a>
@@ -2038,9 +2343,38 @@ code {
     <button class="topbar-btn topbar-btn-load" onclick="openLoadModal()" title="Muat sesi dari JSON">
       📂 Muat Sesi
     </button>
+    <button class="topbar-btn topbar-btn-cloud" id="btn-cloud-save" onclick="cloudSave()" title="Simpan ke Cloud (Supabase)" style="display:none">
+      ☁️ Cloud Save
+    </button>
   </div>
 
   <div class="topbar-sep" style="flex:0;width:12px"></div>
+
+  <!-- Login / User Chip -->
+  <div id="auth-login-chip" style="display:none">
+    <button class="topbar-btn" onclick="openAuthModal()" style="background:rgba(139,105,4,.25);border-color:rgba(139,105,4,.6);color:#f5c842">
+      👤 Masuk
+    </button>
+  </div>
+  <div id="auth-user-chip" style="display:none">
+    <div class="user-chip" onclick="toggleUserDropdown()" id="user-chip-btn">
+      <div class="user-avatar" id="user-avatar-initials">?</div>
+      <span id="user-chip-name">Pengguna</span>
+      <span style="font-size:10px;opacity:.6">▾</span>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="user-dd-head">
+          <div class="user-dd-name" id="dd-name">—</div>
+          <div class="user-dd-email" id="dd-email">—</div>
+        </div>
+        <div class="user-dd-item" onclick="openCloudSessionsModal()">☁️ Proyek Cloud Saya</div>
+        <div class="user-dd-item" onclick="cloudSave()">⬆️ Simpan ke Cloud</div>
+        <div class="user-dd-sep"></div>
+        <div class="user-dd-item" onclick="openSbConfig()">⚙️ Konfigurasi Supabase</div>
+        <div class="user-dd-sep"></div>
+        <div class="user-dd-item danger" onclick="doLogout()">🚪 Keluar</div>
+      </div>
+    </div>
+  </div>
 
   <button class="dark-toggle" id="dark-toggle" onclick="toggleDark()" title="Toggle dark/light mode" aria-label="Toggle dark mode">🌙</button>
   <div class="topbar-tag">Terowongan Aman dan Selamat · Decision Support Tool</div>
@@ -2121,6 +2455,34 @@ code {
     </div>
   </div>
 </div>
+
+<!-- CLOUD SESSIONS MODAL -->
+<div class="modal-overlay" id="modal-cloud-sessions">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head">
+      <div class="modal-icon modal-icon-load">☁️</div>
+      <div>
+        <div class="modal-title">Proyek Cloud Saya</div>
+        <div class="modal-sub">Semua sesi yang tersimpan di Supabase</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-cloud-sessions')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cloud-sessions-list">
+        <div style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px">
+          <div style="font-size:28px;margin-bottom:8px">☁️</div>
+          Memuat proyek cloud...
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-cloud-sessions')">Tutup</button>
+      <button class="btn btn-primary" onclick="cloudSave()">⬆️ Simpan Sesi Aktif ke Cloud</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT LOG PANEL in Save Modal (injected later) -->
 
 <!-- TOAST -->
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -6703,6 +7065,545 @@ function buildComparePanel() {
     </table></div>`;
 }
 
+
+
+// ══════════════════════════════════════════════
+// SUPABASE INTEGRATION — TERAS v16
+// ══════════════════════════════════════════════
+
+const SB_CFG_KEY = 'teras_sb_config';
+const SB_SESSION_TABLE = 'teras_sessions';
+const SB_AUDIT_TABLE   = 'teras_audit_log';
+
+let _supabase = null;     // Supabase client
+let _sbUser   = null;     // current auth user
+
+// ── INIT ─────────────────────────────────────
+(async function initSupabase() {
+  // Load saved config
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem(SB_CFG_KEY) || '{}'); } catch(e) {}
+
+  if (!cfg.url || !cfg.key) {
+    // No config yet — show config modal on first visit
+    const firstVisit = !localStorage.getItem('teras_sb_dismissed');
+    if (firstVisit) {
+      setTimeout(() => document.getElementById('modal-sb-config').classList.add('open'), 800);
+    }
+    showLoginChip(false); // show login chip as greyed
+    return;
+  }
+
+  try {
+    _supabase = window.supabase.createClient(cfg.url, cfg.key);
+    // Restore existing session
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session?.user) {
+      _sbUser = session.user;
+      onUserLoggedIn(_sbUser);
+    } else {
+      showLoginChip(true);
+    }
+
+    // Listen to auth changes
+    _supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        _sbUser = session.user;
+        onUserLoggedIn(_sbUser);
+        closeAuthModal();
+      } else if (event === 'SIGNED_OUT') {
+        _sbUser = null;
+        onUserLoggedOut();
+      }
+    });
+  } catch(e) {
+    console.warn('Supabase init error:', e);
+    showLoginChip(false);
+  }
+})();
+
+// ── SUPABASE CONFIG SAVE ──────────────────────
+function saveSbConfig() {
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  const err = document.getElementById('sb-config-err');
+
+  if (!url.startsWith('https://') || !key.startsWith('eyJ')) {
+    err.style.display = 'block';
+    err.textContent = '⛔ URL atau Anon Key tidak valid. Periksa kembali di dashboard Supabase.';
+    return;
+  }
+  err.style.display = 'none';
+  localStorage.setItem(SB_CFG_KEY, JSON.stringify({ url, key }));
+  localStorage.setItem('teras_sb_dismissed', '1');
+  document.getElementById('modal-sb-config').classList.remove('open');
+  showToast('ok', '✓ Konfigurasi Supabase disimpan — memuat ulang...');
+  setTimeout(() => location.reload(), 1200);
+}
+
+function closeSbConfig() {
+  localStorage.setItem('teras_sb_dismissed', '1');
+  document.getElementById('modal-sb-config').classList.remove('open');
+  showLoginChip(false);
+}
+
+function openSbConfig() {
+  closeUserDropdown();
+  const cfg = JSON.parse(localStorage.getItem(SB_CFG_KEY) || '{}');
+  if (cfg.url) document.getElementById('sb-url-input').value = cfg.url;
+  if (cfg.key) document.getElementById('sb-key-input').value = cfg.key;
+  document.getElementById('modal-sb-config').classList.add('open');
+}
+
+// ── AUTH UI HELPERS ───────────────────────────
+function showLoginChip(active) {
+  const loginChip = document.getElementById('auth-login-chip');
+  const userChip  = document.getElementById('auth-user-chip');
+  const cloudBtn  = document.getElementById('btn-cloud-save');
+  if (active) {
+    loginChip.style.display = 'block';
+    userChip.style.display = 'none';
+    if (cloudBtn) cloudBtn.style.display = 'none';
+  } else {
+    loginChip.style.display = 'block';
+    loginChip.querySelector('button').style.opacity = '0.45';
+    loginChip.querySelector('button').title = 'Konfigurasi Supabase dahulu';
+  }
+}
+
+function onUserLoggedIn(user) {
+  const name  = user.user_metadata?.full_name || user.email.split('@')[0];
+  const email = user.email;
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  document.getElementById('auth-login-chip').style.display = 'none';
+  document.getElementById('auth-user-chip').style.display  = 'block';
+  document.getElementById('user-chip-name').textContent    = name;
+  document.getElementById('user-avatar-initials').textContent = initials;
+  document.getElementById('dd-name').textContent  = name;
+  document.getElementById('dd-email').textContent = email;
+
+  const cloudBtn = document.getElementById('btn-cloud-save');
+  if (cloudBtn) cloudBtn.style.display = 'inline-flex';
+
+  showToast('ok', `✓ Halo, ${name}! Sesi cloud aktif.`);
+}
+
+function onUserLoggedOut() {
+  document.getElementById('auth-login-chip').style.display = 'block';
+  document.getElementById('auth-user-chip').style.display  = 'none';
+  const cloudBtn = document.getElementById('btn-cloud-save');
+  if (cloudBtn) cloudBtn.style.display = 'none';
+  showToast('info', 'ℹ Anda telah keluar dari akun.');
+}
+
+// ── OPEN / CLOSE AUTH MODAL ───────────────────
+function openAuthModal() {
+  if (!_supabase) {
+    openSbConfig();
+    return;
+  }
+  document.getElementById('modal-auth').style.display = 'flex';
+  clearAuthMessages();
+}
+
+function closeAuthModal() {
+  document.getElementById('modal-auth').style.display = 'none';
+}
+
+function skipAuth() {
+  closeAuthModal();
+  showToast('info', 'ℹ Mode lokal — data tidak di-sync ke cloud.');
+}
+
+function switchAuthTab(tab) {
+  clearAuthMessages();
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('auth-form-login').style.display    = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('auth-form-register').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+function clearAuthMessages() {
+  const e = document.getElementById('auth-err');
+  const o = document.getElementById('auth-ok');
+  if (e) { e.style.display = 'none'; e.textContent = ''; }
+  if (o) { o.style.display = 'none'; o.textContent = ''; }
+}
+
+function showAuthErr(msg) {
+  const e = document.getElementById('auth-err');
+  e.style.display = 'block'; e.textContent = msg;
+}
+
+function showAuthOk(msg) {
+  const o = document.getElementById('auth-ok');
+  o.style.display = 'block'; o.textContent = msg;
+}
+
+// ── LOGIN ─────────────────────────────────────
+async function doLogin() {
+  if (!_supabase) return;
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn      = document.getElementById('auth-login-btn');
+  if (!email || !password) { showAuthErr('⛔ Isi email dan password.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Masuk...';
+  clearAuthMessages();
+
+  const { error } = await _supabase.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Masuk ke TERAS';
+  if (error) {
+    showAuthErr('⛔ ' + (error.message === 'Invalid login credentials' ? 'Email/password salah.' : error.message));
+  }
+  // onAuthStateChange handles success
+}
+
+// ── REGISTER ──────────────────────────────────
+async function doRegister() {
+  if (!_supabase) return;
+  const name     = document.getElementById('auth-fullname').value.trim();
+  const email    = document.getElementById('auth-email-reg').value.trim();
+  const password = document.getElementById('auth-password-reg').value;
+  const btn      = document.getElementById('auth-reg-btn');
+
+  if (!name || !email || !password) { showAuthErr('⛔ Lengkapi semua field.'); return; }
+  if (password.length < 6) { showAuthErr('⛔ Password minimal 6 karakter.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Mendaftar...';
+  clearAuthMessages();
+
+  const { error } = await _supabase.auth.signUp({
+    email, password,
+    options: { data: { full_name: name } }
+  });
+  btn.disabled = false; btn.textContent = 'Buat Akun';
+  if (error) {
+    showAuthErr('⛔ ' + error.message);
+  } else {
+    showAuthOk('✓ Akun dibuat! Cek email Anda untuk konfirmasi, lalu masuk kembali.');
+    setTimeout(() => switchAuthTab('login'), 2500);
+  }
+}
+
+// ── GOOGLE LOGIN ──────────────────────────────
+async function doGoogleLogin() {
+  if (!_supabase) return;
+  const { error } = await _supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.href }
+  });
+  if (error) showAuthErr('⛔ ' + error.message);
+}
+
+// ── LOGOUT ────────────────────────────────────
+async function doLogout() {
+  closeUserDropdown();
+  if (!_supabase) return;
+  await _supabase.auth.signOut();
+}
+
+// ── USER DROPDOWN ─────────────────────────────
+function toggleUserDropdown() {
+  const dd = document.getElementById('user-dropdown');
+  dd.classList.toggle('open');
+}
+
+function closeUserDropdown() {
+  document.getElementById('user-dropdown')?.classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#user-chip-btn')) closeUserDropdown();
+});
+
+// ── CLOUD SAVE ────────────────────────────────
+async function cloudSave() {
+  closeUserDropdown();
+  if (!_supabase || !_sbUser) {
+    openAuthModal();
+    return;
+  }
+
+  const btn = document.getElementById('btn-cloud-save');
+  if (btn) { btn.textContent = '⏳ Menyimpan...'; btn.classList.add('syncing'); }
+
+  try {
+    const sessionObj = buildSessionObject();
+    const output = buildOutputSnapshot(); // capture current output state
+
+    const payload = {
+      user_id:      _sbUser.id,
+      user_email:   _sbUser.email,
+      user_name:    _sbUser.user_metadata?.full_name || _sbUser.email.split('@')[0],
+      project_name: D.nama || 'Tanpa Nama',
+      nfpa_category:D.panjang || '—',
+      panjang_m:    parseFloat(D.panjang_m) || 0,
+      session_data: sessionObj,
+      output_snapshot: output,
+      saved_at:     new Date().toISOString(),
+      app_version:  'v16',
+    };
+
+    // Upsert (update if same project name + user, else insert)
+    const { data, error } = await _supabase
+      .from(SB_SESSION_TABLE)
+      .upsert(payload, { onConflict: 'user_id,project_name' })
+      .select();
+
+    if (error) throw error;
+
+    // Write audit log
+    await writeAuditLog('save', D.nama || 'Tanpa Nama', sessionObj);
+
+    markClean(D.nama);
+    showToast('ok', `☁️ Proyek "${D.nama || 'Tanpa Nama'}" tersimpan ke cloud!`);
+  } catch(err) {
+    showToast('err', '❌ Cloud save gagal: ' + err.message);
+  } finally {
+    if (btn) { btn.textContent = '☁️ Cloud Save'; btn.classList.remove('syncing'); }
+  }
+}
+
+// ── OUTPUT SNAPSHOT ───────────────────────────
+function buildOutputSnapshot() {
+  try {
+    const el = document.getElementById('stage-6');
+    if (!el) return null;
+    // Grab text content from main output sections (lightweight)
+    const statRow = document.getElementById('out-summary-stats');
+    const recs    = document.getElementById('out-reqs-list');
+    return {
+      captured_at: new Date().toISOString(),
+      summary_html: statRow ? statRow.innerHTML.substring(0, 4000) : null,
+      requirements_count: recs ? recs.querySelectorAll('.req-card').length : 0,
+      nfpa_category: D.panjang || '—',
+    };
+  } catch(e) { return null; }
+}
+
+// ── AUDIT LOG ─────────────────────────────────
+async function writeAuditLog(action, projectName, sessionData) {
+  if (!_supabase || !_sbUser) return;
+  try {
+    await _supabase.from(SB_AUDIT_TABLE).insert({
+      user_id:      _sbUser.id,
+      user_email:   _sbUser.email,
+      user_name:    _sbUser.user_metadata?.full_name || _sbUser.email.split('@')[0],
+      action:       action,               // 'save' | 'load' | 'generate'
+      project_name: projectName,
+      nfpa_category:D.panjang || '—',
+      details: {
+        panjang_m: D.panjang_m,
+        fungsi:    D.fungsi,
+        fields_filled: Object.keys(D).filter(k => D[k]).length
+      },
+      created_at: new Date().toISOString(),
+    });
+  } catch(e) {
+    console.warn('Audit log error:', e.message);
+  }
+}
+
+// ── CLOUD SESSIONS LIST ───────────────────────
+async function openCloudSessionsModal() {
+  closeUserDropdown();
+  openModal('modal-cloud-sessions');
+  await loadCloudSessions();
+}
+
+async function loadCloudSessions() {
+  const container = document.getElementById('cloud-sessions-list');
+  if (!_supabase || !_sbUser) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">Masuk terlebih dahulu untuk melihat proyek cloud.</div>';
+    return;
+  }
+
+  container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim);font-size:13px">⏳ Memuat...</div>';
+
+  try {
+    const { data, error } = await _supabase
+      .from(SB_SESSION_TABLE)
+      .select('*')
+      .eq('user_id', _sbUser.id)
+      .order('saved_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px"><div style="font-size:28px;margin-bottom:8px">☁️</div>Belum ada proyek cloud. Simpan sesi aktif untuk memulai.</div>';
+      return;
+    }
+
+    container.innerHTML = data.map(s => `
+      <div class="cloud-session-item" onclick="loadCloudSession('${s.id}')">
+        <div class="cloud-session-icon">📋</div>
+        <div class="cloud-session-info">
+          <div class="cloud-session-name">${escHtml(s.project_name)}</div>
+          <div class="cloud-session-meta">
+            Kategori ${escHtml(s.nfpa_category)} · ${s.panjang_m ? s.panjang_m + ' m · ' : ''}${formatDate(s.saved_at)}
+          </div>
+          <div class="cloud-session-user">☁️ ${escHtml(s.user_name || s.user_email)}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="event.stopPropagation();loadCloudSession('${s.id}')">Muat</button>
+          <button class="btn" style="padding:4px 10px;font-size:11px;background:var(--danger-light);color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();deleteCloudSession('${s.id}')">🗑</button>
+        </div>
+      </div>`).join('');
+
+    // Append audit log
+    await renderAuditLog(container);
+
+  } catch(err) {
+    container.innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px">❌ Gagal memuat: ${escHtml(err.message)}<br><small>Periksa konfigurasi Supabase dan pastikan tabel <code>${SB_SESSION_TABLE}</code> sudah dibuat.</small></div>`;
+  }
+}
+
+async function loadCloudSession(id) {
+  if (!_supabase) return;
+  try {
+    const { data, error } = await _supabase
+      .from(SB_SESSION_TABLE)
+      .select('session_data, project_name')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!data?.session_data) throw new Error('Data sesi tidak ditemukan');
+
+    validateAndStagSession(data.session_data, 'Cloud: ' + data.project_name);
+    closeModal('modal-cloud-sessions');
+    // Apply
+    setTimeout(() => {
+      applyLoadedSession();
+      writeAuditLog('load', data.project_name, data.session_data);
+    }, 100);
+  } catch(err) {
+    showToast('err', '❌ Gagal muat cloud: ' + err.message);
+  }
+}
+
+async function deleteCloudSession(id) {
+  if (!_supabase || !confirm('Hapus proyek cloud ini?')) return;
+  try {
+    const { error } = await _supabase.from(SB_SESSION_TABLE).delete().eq('id', id);
+    if (error) throw error;
+    showToast('ok', '🗑 Proyek cloud dihapus.');
+    loadCloudSessions();
+  } catch(err) {
+    showToast('err', '❌ ' + err.message);
+  }
+}
+
+// ── RENDER AUDIT LOG ──────────────────────────
+async function renderAuditLog(container) {
+  if (!_supabase || !_sbUser) return;
+  try {
+    const { data } = await _supabase
+      .from(SB_AUDIT_TABLE)
+      .select('*')
+      .eq('user_id', _sbUser.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!data || data.length === 0) return;
+
+    const auditHtml = `
+      <div class="audit-section" style="margin-top:20px">
+        <div class="audit-title">📋 Riwayat Aktivitas</div>
+        ${data.map(a => `
+          <div class="audit-item">
+            <div class="audit-avatar">${(a.user_name || a.user_email)[0].toUpperCase()}</div>
+            <div class="audit-info">
+              <div>
+                <span class="audit-user">${escHtml(a.user_name || a.user_email)}</span>
+                <span class="audit-action"> ${actionLabel(a.action)} proyek </span>
+                <strong>${escHtml(a.project_name)}</strong>
+                <span style="color:var(--text-muted)"> (Kategori ${escHtml(a.nfpa_category)})</span>
+              </div>
+              <div class="audit-time">${formatDate(a.created_at)}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+
+    container.insertAdjacentHTML('beforeend', auditHtml);
+  } catch(e) {
+    // silently ignore audit errors
+  }
+}
+
+function actionLabel(action) {
+  return action === 'save' ? 'menyimpan' : action === 'load' ? 'memuat' : action === 'generate' ? 'men-generate' : action;
+}
+
+// ── HOOK INTO generateResult for audit ────────
+const _origGenerateResult = typeof generateResult === 'function' ? generateResult : null;
+if (_origGenerateResult) {
+  window.generateResult = function() {
+    _origGenerateResult();
+    if (_sbUser) writeAuditLog('generate', D.nama || 'Tanpa Nama', {});
+  };
+}
+
+// ── HELPER: openModal (reuse existing pattern) ─
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.style.display = 'flex';
+}
+
+// ── HELPERS ───────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+  } catch(e) { return iso; }
+}
+
+// ── SUPABASE SETUP GUIDE (shown in footer) ────
+// Required tables (run in Supabase SQL Editor):
+/*
+  create table if not exists teras_sessions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references auth.users(id) on delete cascade,
+    user_email text,
+    user_name text,
+    project_name text,
+    nfpa_category text,
+    panjang_m float,
+    session_data jsonb,
+    output_snapshot jsonb,
+    saved_at timestamptz default now(),
+    app_version text,
+    unique(user_id, project_name)
+  );
+
+  create table if not exists teras_audit_log (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references auth.users(id) on delete cascade,
+    user_email text,
+    user_name text,
+    action text,
+    project_name text,
+    nfpa_category text,
+    details jsonb,
+    created_at timestamptz default now()
+  );
+
+  -- RLS policies
+  alter table teras_sessions enable row level security;
+  alter table teras_audit_log enable row level security;
+
+  create policy "Users manage own sessions" on teras_sessions
+    for all using (auth.uid() = user_id);
+
+  create policy "Users manage own audit" on teras_audit_log
+    for all using (auth.uid() = user_id);
+*/
 
 </script>
 </body>
