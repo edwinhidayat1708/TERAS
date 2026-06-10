@@ -1,4 +1,18 @@
 <!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  TERAS v16 — Setup untuk GitHub Pages                   ║
+  ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
+  ║                                                          ║
+  ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
+  ║         const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY'    ║
+  ║                                                          ║
+  ║  Isi dengan URL + Anon Key dari:                         ║
+  ║  supabase.com → Project → Settings → API                ║
+  ║                                                          ║
+  ║  Anon Key aman dipublikasi — akses dikendalikan RLS.     ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -2244,11 +2258,11 @@ code {
 ══════════════════════════════════════════════ -->
 <div class="supabase-config-modal" id="modal-sb-config">
   <div class="supabase-config-box">
-    <div class="sb-config-title">⚙️ Konfigurasi Supabase</div>
+    <div class="sb-config-title">⚙️ Info Supabase (Admin)</div>
     <div class="sb-config-sub">
-      Masukkan URL dan Anon Key dari project Supabase Anda untuk mengaktifkan sync cloud &amp; login.<br>
-      Data ini disimpan di <code>localStorage</code> browser Anda saja.
-      <br><a href="https://supabase.com/dashboard" target="_blank" style="color:var(--accent2)">Buat project Supabase gratis →</a>
+      Konfigurasi Supabase disimpan langsung di <code>index.html</code> oleh admin/developer.<br>
+      End user tidak perlu mengisi ini — cukup daftar atau login.<br>
+      <span style="color:var(--color-text-warning,#9a5c00)">Untuk override sementara (testing), isi di bawah:</span>
     </div>
     <div class="auth-field-wrap">
       <label class="auth-label">Supabase Project URL</label>
@@ -7071,32 +7085,34 @@ function buildComparePanel() {
 // SUPABASE INTEGRATION — TERAS v16
 // ══════════════════════════════════════════════
 
-const SB_CFG_KEY = 'teras_sb_config';
+// ══════════════════════════════════════════════
+// KONFIGURASI SUPABASE — GANTI DUA BARIS INI
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL';   // contoh: https://xxxx.supabase.co
+const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY';      // contoh: eyJhbGci...
+
 const SB_SESSION_TABLE = 'teras_sessions';
 const SB_AUDIT_TABLE   = 'teras_audit_log';
 
-let _supabase = null;     // Supabase client
-let _sbUser   = null;     // current auth user
+let _supabase = null;
+let _sbUser   = null;
 
 // ── INIT ─────────────────────────────────────
 (async function initSupabase() {
-  // Load saved config
-  let cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem(SB_CFG_KEY) || '{}'); } catch(e) {}
-
-  if (!cfg.url || !cfg.key) {
-    // No config yet — show config modal on first visit
-    const firstVisit = !localStorage.getItem('teras_sb_dismissed');
-    if (firstVisit) {
-      setTimeout(() => document.getElementById('modal-sb-config').classList.add('open'), 800);
-    }
-    showLoginChip(false); // show login chip as greyed
+  // Validasi: pastikan placeholder sudah diganti
+  if (!SUPABASE_URL || SUPABASE_URL.includes('GANTI') ||
+      !SUPABASE_KEY || SUPABASE_KEY.includes('GANTI')) {
+    // Belum dikonfigurasi — tampilkan pesan di topbar untuk admin saja
+    // End user tidak terganggu, fitur cloud tidak aktif
+    console.warn('TERAS: Supabase belum dikonfigurasi. Edit SUPABASE_URL dan SUPABASE_KEY di index.html');
+    document.getElementById('auth-login-chip').style.display = 'none';
     return;
   }
 
   try {
-    _supabase = window.supabase.createClient(cfg.url, cfg.key);
-    // Restore existing session
+    _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Cek sesi yang sudah ada (misal setelah redirect OAuth)
     const { data: { session } } = await _supabase.auth.getSession();
     if (session?.user) {
       _sbUser = session.user;
@@ -7105,7 +7121,7 @@ let _sbUser   = null;     // current auth user
       showLoginChip(true);
     }
 
-    // Listen to auth changes
+    // Dengarkan perubahan auth (login, logout, OAuth callback)
     _supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         _sbUser = session.user;
@@ -7118,40 +7134,36 @@ let _sbUser   = null;     // current auth user
     });
   } catch(e) {
     console.warn('Supabase init error:', e);
-    showLoginChip(false);
   }
 })();
 
 // ── SUPABASE CONFIG SAVE ──────────────────────
+// ── SUPABASE CONFIG (hanya untuk admin via dropdown) ──
 function saveSbConfig() {
   const url = document.getElementById('sb-url-input').value.trim();
   const key = document.getElementById('sb-key-input').value.trim();
   const err = document.getElementById('sb-config-err');
-
   if (!url.startsWith('https://') || !key.startsWith('eyJ')) {
     err.style.display = 'block';
-    err.textContent = '⛔ URL atau Anon Key tidak valid. Periksa kembali di dashboard Supabase.';
+    err.textContent = '⛔ URL atau Anon Key tidak valid.';
     return;
   }
   err.style.display = 'none';
-  localStorage.setItem(SB_CFG_KEY, JSON.stringify({ url, key }));
-  localStorage.setItem('teras_sb_dismissed', '1');
+  // Simpan override di localStorage (untuk dev/testing saja)
+  localStorage.setItem('teras_sb_override', JSON.stringify({ url, key }));
   document.getElementById('modal-sb-config').classList.remove('open');
-  showToast('ok', '✓ Konfigurasi Supabase disimpan — memuat ulang...');
+  showToast('ok', '✓ Override Supabase disimpan — memuat ulang...');
   setTimeout(() => location.reload(), 1200);
 }
 
 function closeSbConfig() {
-  localStorage.setItem('teras_sb_dismissed', '1');
   document.getElementById('modal-sb-config').classList.remove('open');
-  showLoginChip(false);
 }
 
 function openSbConfig() {
   closeUserDropdown();
-  const cfg = JSON.parse(localStorage.getItem(SB_CFG_KEY) || '{}');
-  if (cfg.url) document.getElementById('sb-url-input').value = cfg.url;
-  if (cfg.key) document.getElementById('sb-key-input').value = cfg.key;
+  document.getElementById('sb-url-input').value = SUPABASE_URL.includes('GANTI') ? '' : SUPABASE_URL;
+  document.getElementById('sb-key-input').value = SUPABASE_KEY.includes('GANTI') ? '' : SUPABASE_KEY;
   document.getElementById('modal-sb-config').classList.add('open');
 }
 
@@ -7160,15 +7172,9 @@ function showLoginChip(active) {
   const loginChip = document.getElementById('auth-login-chip');
   const userChip  = document.getElementById('auth-user-chip');
   const cloudBtn  = document.getElementById('btn-cloud-save');
-  if (active) {
-    loginChip.style.display = 'block';
-    userChip.style.display = 'none';
-    if (cloudBtn) cloudBtn.style.display = 'none';
-  } else {
-    loginChip.style.display = 'block';
-    loginChip.querySelector('button').style.opacity = '0.45';
-    loginChip.querySelector('button').title = 'Konfigurasi Supabase dahulu';
-  }
+  loginChip.style.display = active ? 'block' : 'none';
+  userChip.style.display  = 'none';
+  if (cloudBtn) cloudBtn.style.display = 'none';
 }
 
 function onUserLoggedIn(user) {
@@ -7200,7 +7206,7 @@ function onUserLoggedOut() {
 // ── OPEN / CLOSE AUTH MODAL ───────────────────
 function openAuthModal() {
   if (!_supabase) {
-    openSbConfig();
+    showToast('warn', '⚠ Fitur cloud belum dikonfigurasi oleh admin.');
     return;
   }
   document.getElementById('modal-auth').style.display = 'flex';
@@ -7292,7 +7298,7 @@ async function doGoogleLogin() {
   if (!_supabase) return;
   const { error } = await _supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: location.href }
+    options: { redirectTo: location.origin + location.pathname }
   });
   if (error) showAuthErr('⛔ ' + error.message);
 }
