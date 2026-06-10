@@ -11,34 +11,34 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <style>
 :root {
-  /* ── OLD MONEY: Navy + Cream ── */
-  --bg:            #EDE7D9;
-  --surface:       #F5F0E8;
-  --surface2:      #EDE7D9;
-  --surface3:      #E2D9C8;
-  --border:        #C8BFA8;
-  --border-strong: #9A9080;
-  --text:          #1B2A4A;
-  --text-sub:      #2E4370;
-  --text-muted:    #5C6C88;
-  --text-dim:      #8E9BB0;
-  /* Accent: antique gold */
-  --accent:        #8B6914;
-  --accent-hover:  #6F5310;
-  --accent-light:  #FAF3E0;
-  /* Accent2: navy blue */
-  --accent2:       #1B2A4A;
-  --accent2-light: #D8E0EE;
-  /* Accent3: forest */
-  --accent3:       #2E6B42;
-  --accent3-light: #D8EEE1;
-  --warn:          #8B5E00;
-  --warn-light:    #FDF3DC;
-  --danger:        #8B1A1A;
-  --danger-light:  #FAECEC;
-  --shadow-sm: 0 1px 3px rgba(27,42,74,0.10), 0 1px 2px rgba(27,42,74,0.06);
-  --shadow:    0 4px 16px rgba(27,42,74,0.10), 0 2px 6px rgba(27,42,74,0.06);
-  --shadow-lg: 0 12px 40px rgba(27,42,74,0.13), 0 4px 12px rgba(27,42,74,0.08);
+  /* ── NAVY + CREAM: terang, kontras, enak dilihat ── */
+  --bg:            #F4F1EB;   /* krem hangat — background halaman */
+  --surface:       #FFFFFF;   /* putih bersih — card, form, modal */
+  --surface2:      #F9F7F3;   /* putih krem — sub-surface */
+  --surface3:      #F0EDE6;   /* krem muda — hover, alt row */
+  --border:        #D8D0C4;   /* border normal */
+  --border-strong: #B0A898;   /* border kuat */
+  --text:          #1B2A4A;   /* navy gelap — teks utama */
+  --text-sub:      #374B6E;   /* navy medium — teks sub */
+  --text-muted:    #6B7A96;   /* navy muda — teks muted */
+  --text-dim:      #9AA3B8;   /* abu-biru — teks dim */
+  /* Accent: gold antik — hanya untuk highlight */
+  --accent:        #8B6904;
+  --accent-hover:  #6F5303;
+  --accent-light:  #FDF6E3;
+  /* Accent2: navy royal */
+  --accent2:       #1B4A8A;
+  --accent2-light: #E6EEF8;
+  /* Accent3: hijau forest */
+  --accent3:       #1A6B3C;
+  --accent3-light: #E3F5EC;
+  --warn:          #855400;
+  --warn-light:    #FEF3DC;
+  --danger:        #9B1C1C;
+  --danger-light:  #FEF0F0;
+  --shadow-sm: 0 1px 3px rgba(27,42,74,0.08), 0 1px 2px rgba(27,42,74,0.05);
+  --shadow:    0 4px 16px rgba(27,42,74,0.09), 0 2px 6px rgba(27,42,74,0.05);
+  --shadow-lg: 0 12px 40px rgba(27,42,74,0.12), 0 4px 12px rgba(27,42,74,0.07);
   --radius:    10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
@@ -83,7 +83,7 @@ body {
 
 .topbar-brand-icon {
   width: 28px; height: 28px;
-  background: #1B2A4A;
+  background: #8B6904;
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
@@ -192,7 +192,7 @@ body {
 
 /* ── PROGRESS STEPPER ───────────────────────────── */
 .stepper-wrap {
-  background: #ffffff;
+  background: var(--surface);
   border-bottom: 2px solid var(--border);
   padding: 0 32px;
   position: sticky;
@@ -358,7 +358,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.field:hover { border-color: #1B2A4A; }
+.field:hover { border-color: var(--accent2); }
 .field:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 3px rgba(26,86,196,0.12);
@@ -707,13 +707,13 @@ input:focus-visible,
 
 .cat-x { background: var(--surface3); border-color: var(--border-strong); }
 .cat-a { background: #e8f5ee; border-color: #2a9a60; }
-.cat-b { background: #e6effd; border-color: #1a56c4; }
+.cat-b { background: #EAF0FB; border-color: #1B4A8A; }
 .cat-c { background: #fef5e0; border-color: #c07a00; }
 .cat-d { background: #fdecea; border-color: #b81c18; }
 
 .cat-x .cat-badge { color: var(--text-sub); }
 .cat-a .cat-badge { color: #0f6b3c; }
-.cat-b .cat-badge { color: #1a56c4; }
+.cat-b .cat-badge { color: #1B4A8A; }
 .cat-c .cat-badge { color: #9a5c00; }
 .cat-d .cat-badge { color: #b51c18; }
 
@@ -1188,7 +1188,7 @@ code {
   transition: border-color 0.15s;
 }
 
-.cv-input:focus { border-color: var(--accent); background: white; }
+.cv-input:focus { border-color: var(--accent); background: var(--surface); }
 
 .cv-unit {
   font-family: 'DM Mono', monospace;
@@ -1644,7 +1644,7 @@ code {
 }
 
 .toast.show { transform: translateY(0); opacity: 1; }
-.toast-ok { background: #1a7a4a; color: white; }
+.toast-ok { background: #1B4A8A; color: #F9F7F3; }
 .toast-err { background: var(--danger); color: white; }
 .toast-info { background: var(--accent2); color: white; }
 
@@ -1745,7 +1745,7 @@ code {
   bottom: -2px;
 }
 .out-tab:hover { background: var(--surface3); color: var(--text); }
-.out-tab.active { background: #ffffff; border-color: var(--accent); border-bottom-color: #ffffff; color: var(--accent); font-weight: 700; }
+.out-tab.active { background: var(--surface); border-color: var(--accent); border-bottom-color: var(--surface); color: var(--accent); font-weight: 700; }
 .out-tab-panel { display: none; }
 .out-tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
 
@@ -1823,7 +1823,7 @@ code {
 .erp-checklist { list-style: none; margin: 8px 0; }
 .erp-checklist li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(216,212,204,0.3); font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
 .erp-checklist li:last-child { border-bottom: none; }
-.erp-check-box { width: 14px; height: 14px; border: 1.5px solid var(--border-strong); border-radius: 3px; flex-shrink: 0; margin-top: 2px; background: white; }
+.erp-check-box { width: 14px; height: 14px; border: 1.5px solid var(--border-strong); border-radius: 3px; flex-shrink: 0; margin-top: 2px; background: var(--surface); }
 .erp-ics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
 @media(max-width:600px){ .erp-ics-grid { grid-template-columns: 1fr; } }
 .erp-ics-role { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
@@ -1948,14 +1948,14 @@ code {
 
 /* ══ DARK MODE ══ */
 [data-theme="dark"] {
-  --bg:#111827; --surface:#1A2235; --surface2:#1E2A40; --surface3:#243050;
-  --border:#2E3F60; --border-strong:#4A5F88;
-  --text:#EDE7D9; --text-sub:#C8BFA8; --text-muted:#8E9BB0; --text-dim:#4A5568;
-  --accent:#C9A227; --accent-hover:#A8841E; --accent-light:#2A2000;
-  --accent2:#7BA3D8; --accent2-light:#0D1E35;
-  --accent3:#5AAF7A; --accent3-light:#0A2318;
-  --warn:#D4A017; --warn-light:#2A2000;
-  --danger:#E05555; --danger-light:#2A1010;
+  --bg:#0E1620; --surface:#162032; --surface2:#1C2840; --surface3:#22304C;
+  --border:#2C3E5C; --border-strong:#4A6080;
+  --text:#F4F1EB; --text-sub:#C8C0B0; --text-muted:#8898B8; --text-dim:#4A5878;
+  --accent:#C9A430; --accent-hover:#A88420; --accent-light:#261E08;
+  --accent2:#5B8FD0; --accent2-light:#0D1E35;
+  --accent3:#3AAF6A; --accent3-light:#0A2318;
+  --warn:#D4A820; --warn-light:#261E08;
+  --danger:#E06060; --danger-light:#2A1010;
   --shadow-sm:0 1px 3px rgba(0,0,0,.5);
   --shadow:0 4px 16px rgba(0,0,0,.6);
   --shadow-lg:0 12px 40px rgba(0,0,0,.7);
@@ -3336,7 +3336,7 @@ function handlePanjangActualInput(val) {
     cat = 'A'; catColor = '#0f6b3c'; borderColor = '#2a9a60';
     catDesc = 'Kategori A: semua persyaratan Cat. X + Standpipe wajib';
   } else if (m < 300) {
-    cat = 'B'; catColor = '#1a56c4'; borderColor = '#1a56c4';
+    cat = 'B'; catColor = '#1B4A8A'; borderColor = '#1B4A8A';
     catDesc = 'Kategori B: semua sistem berlaku (NFPA 502:2026 §7.2)';
   } else if (m < 1000) {
     cat = 'C'; catColor = '#9a5c00'; borderColor = '#c07a00';
@@ -6528,7 +6528,7 @@ function copyShareLink() {
 // COMPLIANCE RADAR SCORECARD
 // ══════════════════════════════════════════════
 const SCORECARD_CATS = [
-  { key:'ventilasi',    label:'Ventilasi',      ids:['vent'],                           color:'#1a56c4' },
+  { key:'ventilasi',    label:'Ventilasi',      ids:['vent'],                           color:'#1B4A8A' },
   { key:'pemadam',      label:'Pemadam',         ids:['fffs','standpipe','apar'],         color:'#e8502a' },
   { key:'evakuasi',     label:'Evakuasi',        ids:['exit','trotoar','wayf','cp','laybys'], color:'#0f6b3c' },
   { key:'komunikasi',   label:'Komunikasi',      ids:['sos','radio','pa'],                color:'#9a5c00' },
@@ -6607,8 +6607,8 @@ function drawRadar(scores) {
            : ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
   });
   ctx.closePath();
-  ctx.fillStyle='rgba(26,86,196,0.12)'; ctx.fill();
-  ctx.strokeStyle='#1a56c4'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='rgba(27,74,138,0.12)'; ctx.fill();
+  ctx.strokeStyle='#1B4A8A'; ctx.lineWidth=2; ctx.stroke();
 
   // Dots + labels
   scores.forEach((s,i) => {
@@ -6618,7 +6618,7 @@ function drawRadar(scores) {
 
     const dist = R + S*0.08;
     const lx = cx+Math.cos(a)*dist, ly = cy+Math.sin(a)*dist;
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#0d1117';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#1B2A4A';
     ctx.font = `bold ${S*0.032}px DM Sans,sans-serif`;
     ctx.textAlign = lx < cx-8 ? 'right' : lx > cx+8 ? 'left' : 'center';
     ctx.textBaseline = ly < cy-8 ? 'bottom' : ly > cy+8 ? 'top' : 'middle';
