@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v16 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v17 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v16 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v17 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -1953,27 +1953,9 @@ code {
 .compare-bar { background:var(--accent2-light); border-bottom:1px solid var(--accent2); color:var(--accent2); }
 
 /* ══ DARK TOGGLE ══ */
-.dark-toggle {
-  background:none; border:1px solid rgba(255,255,255,0.2); border-radius:20px;
-  padding:3px 9px; font-size:13px; cursor:pointer; color:rgba(245,240,232,0.7);
-  transition:all .2s; line-height:1.4; flex-shrink:0;
-}
-.dark-toggle:hover { border-color:rgba(255,255,255,0.5); color:#F5F0E8; }
 
 /* ══ DARK MODE ══ */
-[data-theme="dark"] {
-  --bg:#0E1620; --surface:#162032; --surface2:#1C2840; --surface3:#22304C;
-  --border:#2C3E5C; --border-strong:#4A6080;
-  --text:#F4F1EB; --text-sub:#C8C0B0; --text-muted:#8898B8; --text-dim:#4A5878;
-  --accent:#C9A430; --accent-hover:#A88420; --accent-light:#261E08;
-  --accent2:#5B8FD0; --accent2-light:#0D1E35;
-  --accent3:#3AAF6A; --accent3-light:#0A2318;
-  --warn:#D4A820; --warn-light:#261E08;
-  --danger:#E06060; --danger-light:#2A1010;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.5);
-  --shadow:0 4px 16px rgba(0,0,0,.6);
-  --shadow-lg:0 12px 40px rgba(0,0,0,.7);
-}
+
 
 /* ══ FIELD VALIDATION ══ */
 .field-missing {
@@ -2390,7 +2372,7 @@ code {
     </div>
   </div>
 
-  <button class="dark-toggle" id="dark-toggle" onclick="toggleDark()" title="Toggle dark/light mode" aria-label="Toggle dark mode">🌙</button>
+
   <div class="topbar-tag">Terowongan Aman dan Selamat · Decision Support Tool</div>
 </header>
 
@@ -2717,11 +2699,9 @@ code {
       <div class="field-label">Trotoar / Jalur Pejalan Kaki <span class="field-ref fr-permen">Permen PUPR 5/2023 Lamp.I Tab.3 + NFPA 502 §7.16.6.3.2</span></div>
       <select id="f-trotoar" onchange="saveField('trotoar',this.value)">
         <option value="">— Pilih —</option>
-        <option value="ada_185">Ada, lebar ≥ 1,85 m (standar pejalan kaki umum)</option>
-        <option value="ada_112">Ada, lebar 1,12 – 1,84 m (min. egress NFPA 502)</option>
-        <option value="ada_050">Ada, lebar ≥ 0,5 m (jalur maintenance — min. Lamp.I)</option>
-        <option value="ada_kecil">Ada, lebar &lt; 0,5 m (di bawah minimum)</option>
-        <option value="tidak">Tidak ada trotoar (hanya bahu jalan)</option>
+        <option value="ada_185">Ada, lebar ≥ 1,85 m</option>
+        <option value="ada_050">Ada, lebar 0,5 – 1,84 m</option>
+        <option value="tidak">Ada, &lt; 0,5 m atau tidak ada trotoar</option>
       </select>
       <div class="field-hint">
         <strong>Permen PUPR 5/2023 Lamp.I Tab.3 (Terowongan):</strong> min. 0,5 m untuk jalur maintenance/akses darurat. 
@@ -2807,9 +2787,8 @@ code {
       <div class="field-label">Cross-Passageway (Lorong Darurat Antar Tube) <span class="field-ref fr-nfpa">NFPA 502 §7.16.6.7</span></div>
       <select id="f-crosspassage" onchange="saveField('crosspassage',this.value)">
         <option value="">— Pilih —</option>
-        <option value="ada_200">Ada, spasi ≤ 200 m ✓ (sangat baik)</option>
-        <option value="ada_300">Ada, spasi 200–300 m ✓ (memenuhi NFPA)</option>
-        <option value="ada_gt300">Ada, spasi &gt; 300 m ⚠ (perlu kajian)</option>
+        <option value="ada_200">Ada, spasi ≤ 200 m</option>
+        <option value="ada_gt200">Ada, spasi &gt; 200 m</option>
         <option value="twin_tanpa_cp">Twin tube TANPA cross-passageway ⚠ (mis. Cisumdawu)</option>
         <option value="tidak">Single tube — tidak relevan</option>
         <option value="belum">Belum direncanakan</option>
@@ -3051,10 +3030,9 @@ code {
       <div class="field-label">Ketersediaan Sumber Air Pemadam <span class="field-ref fr-nfpa">NFPA 502:2026 §7.8 (Water Supply) · Ch.10</span></div>
       <select id="f-air" onchange="saveField('air',this.value)">
         <option value="">— Pilih —</option>
-        <option value="pdam_cukup">PDAM / Reservoir cukup (debit ≥ 1.500 liter/menit)</option>
+        <option value="pdam_cukup">PDAM / Reservoir tersedia (debit ≥ 1.500 liter/menit)</option>
         <option value="pdam_terbatas">PDAM / Reservoir tersedia tapi terbatas</option>
-        <option value="reservoir_lokal">Reservoir lokal / Waduk terdekat</option>
-        <option value="terbatas">Sangat terbatas ⚠ (perlu tangki air onsite)</option>
+        <option value="terbatas">Sangat terbatas (perlu tangki onsite)</option>
       </select>
       <div class="field-hint">Kritis untuk feasibilitas standpipe basah dan FFFS berbasis air. Jika terbatas: water mist (lebih hemat air) atau tangki onsite</div>
     </div>
@@ -4174,7 +4152,7 @@ function computeRequirements() {
 
   // ── TROTOAR / WALKWAY ──
   const trotoarStatus = catGte('B') ? 'wajib' : 'rekomen';
-  const hasTrotoar = ['ada_185','ada_112','ada_050'].includes(D.trotoar);
+  const hasTrotoar = ['ada_185','ada_050'].includes(D.trotoar);
   reqs.push({
     id: 'trotoar', section: '🚪 Evakuasi',
     title: 'Trotoar / Jalur Pejalan Kaki (Walkway)',
@@ -4207,7 +4185,7 @@ function computeRequirements() {
 
   // ── CROSS-PASSAGEWAY ──
   if (tube === 'twin' || tube === 'triple') {
-    const hasCP = ['ada_200','ada_300'].includes(D.crosspassage);
+    const hasCP = ['ada_200','ada_gt200'].includes(D.crosspassage);
     const noCP  = D.crosspassage === 'twin_tanpa_cp';
     reqs.push({
       id: 'cp', section: '🚪 Evakuasi',
@@ -4596,7 +4574,7 @@ function buildScenarioSummary(data, containerId, subId) {
   const hgvLabel = { lt5:'<5%', '5_15':'5–15%', '15_30':'15–30%', gt30:'>30%' }[data.hgv] || '—';
   const fffsLabel = { deluge:'Deluge', mist:'Water Mist', foam:'Foam-Water', tidak:'Tidak Ada' }[data.fffs] || 'Tidak Ada';
   const ventLabel = { longitudinal:'Longitudinal', transverse:'Transverse', semi_trans:'Semi-Trans', alami:'Alami', tidak:'Tidak Ada' }[data.vent] || '—';
-  const cpLabel = { ada_200:'Ada ≤200m', ada_300:'Ada ≤300m', twin_tanpa_cp:'Twin tanpa CP', tidak:'Tidak Ada', belum:'Belum' }[data.crosspassage] || '—';
+  const cpLabel = { ada_200:'Ada ≤200m', ada_gt200:'Ada >200m', twin_tanpa_cp:'Twin tanpa CP', tidak:'Tidak Ada', belum:'Belum' }[data.crosspassage] || '—';
 
   if (subId) document.getElementById(subId).textContent = `${data.nama || 'Proyek'} · Cat. ${cat} · ${pM} m`;
 
@@ -5727,8 +5705,8 @@ function drawLongitudinal(ctx, W, H) {
   }
 
   // Cross-passages (twin tube only)
-  if (isTwin && ['ada_200','ada_300'].includes(D.crosspassage)) {
-    const spacing = D.crosspassage === 'ada_200' ? 200 : 300;
+  if (isTwin && ['ada_200','ada_gt200'].includes(D.crosspassage)) {
+    const spacing = D.crosspassage === 'ada_200' ? 200 : 250;
     for (let pos = spacing; pos < m; pos += spacing) {
       const x = PAD + pos * scale;
       ctx.strokeStyle = 'rgba(16,185,129,0.7)';
@@ -6818,10 +6796,7 @@ const STAGE_REQUIRED = {
     { id:'f-lebar-lajur', label:'Lebar Lajur' },
     { id:'f-clearance',   label:'Clearance Vertikal' },
   ],
-  3: [
-    { id:'f-vent',        label:'Sistem Ventilasi' },
-    { id:'f-fffs',        label:'FFFS' },
-  ],
+  3: [],
 };
 
 function validateStage(n) {
@@ -6846,28 +6821,7 @@ function validateStage(n) {
   return false;
 }
 
-// ══════════════════════════════════════════════
-// DARK MODE
-// ══════════════════════════════════════════════
-(function initDark() {
-  const saved = localStorage.getItem('teras_dark');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (saved === '1' || (!saved && prefersDark)) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    const btn = document.getElementById('dark-toggle');
-    if (btn) btn.textContent = '☀';
-  }
-})();
 
-function toggleDark() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
-  if (isDark) document.documentElement.removeAttribute('data-theme');
-  localStorage.setItem('teras_dark', isDark ? '0' : '1');
-  const btn = document.getElementById('dark-toggle');
-  if (btn) btn.textContent = isDark ? '🌙' : '☀';
-  setTimeout(drawDiagram, 60);
-}
 
 // ══════════════════════════════════════════════
 // SHAREABLE URL (hash-based)
