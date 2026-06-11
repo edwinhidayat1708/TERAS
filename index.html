@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v17 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v18 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v17 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v18 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -441,10 +441,11 @@ select:focus, input:focus {
 
 .field-hint {
   font-size: 11px;
-  color: var(--text-dim);
+  color: #1B2A4A;
   margin-top: 6px;
   line-height: 1.5;
   font-style: italic;
+  opacity: 0.75;
 }
 
 .field-alert {
@@ -875,6 +876,35 @@ input:focus-visible,
 
 @media(max-width: 600px) { .stat-row { grid-template-columns: 1fr 1fr; } }
 
+.stat-card-expand {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+.stat-card-expand:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.stat-detail {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  z-index: 200;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.stat-detail.open { display: block; }
+@media(max-width:640px) {
+  .stat-detail { min-width: 180px; max-width: 92vw; left: 50%; transform: translateX(-50%); }
+}
 .stat-card {
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -2788,10 +2818,10 @@ code {
       <select id="f-crosspassage" onchange="saveField('crosspassage',this.value)">
         <option value="">— Pilih —</option>
         <option value="ada_200">Ada, spasi ≤ 200 m</option>
-        <option value="ada_gt200">Ada, spasi &gt; 200 m</option>
-        <option value="twin_tanpa_cp">Twin tube TANPA cross-passageway ⚠ (mis. Cisumdawu)</option>
+        <option value="ada_300">Ada, spasi 200 – 300 m</option>
+        <option value="ada_gt300">Ada, spasi &gt; 300 m</option>
+        <option value="tidak_ada">Tidak ada</option>
         <option value="tidak">Single tube — tidak relevan</option>
-        <option value="belum">Belum direncanakan</option>
       </select>
       <div class="field-hint">
         <strong>Apa itu cross-passageway?</strong> Lorong/terowongan kecil penghubung antara dua tabung (tube) terowongan yang berdampingan, berfungsi sebagai jalur evakuasi darurat antar tube. NFPA 502 §7.16.6.2: spasi maks. 300 m. 
@@ -2943,10 +2973,10 @@ code {
       <div class="field-label">Persentase Kendaraan Barang Berbahaya <span class="field-ref fr-nfpa">NFPA 502 §7.14, Ch.14</span></div>
       <select id="f-hazmat" onchange="handleHazmatChange()">
         <option value="">— Pilih —</option>
-        <option value="tidak">Tidak ada — kendaraan B3 dilarang masuk</option>
-        <option value="lt1">&lt; 1% (sesekali, dengan izin khusus)</option>
+        <option value="tidak">Tidak ada (dilarang masuk)</option>
+        <option value="lt1">&lt; 1% (sesekali)</option>
         <option value="1_5">1 – 5% (rutin terbatas)</option>
-        <option value="gt5">&gt; 5% (rutin) ⛔</option>
+        <option value="gt5">&gt; 5% (rutin)</option>
       </select>
       <div class="field-hint"><strong>Termasuk:</strong> B3 (Bahan Berbahaya dan Beracun) · Hazmat (Hazardous Materials) · Bahan Kimia Industri · BBM/Tanker · Bahan Mudah Terbakar/Meledak. B3 > 5%: analisis khusus NFPA 502 Ch.14 wajib; pool fire hingga 200–300 MW; FFFS wajib terlepas kategori panjang terowongan (PP 74/2001; NFPA 502 §7.14.1)</div>
       <div class="field-alert" id="alert-hazmat"></div>
@@ -3183,8 +3213,8 @@ code {
       <div class="field-label">APAR — Alat Pemadam Api Ringan <span class="field-ref fr-nfpa">NFPA 502:2026 §7.9</span></div>
       <select id="f-apar" onchange="saveField('apar',this.value)">
         <option value="">— Pilih —</option>
-        <option value="ada_90">Ada, jarak ≤ 90 m, rating 2A:20B:C, ≤ 9 kg ✓</option>
-        <option value="ada_lebih">Ada, jarak &gt; 90 m (tidak memenuhi NFPA)</option>
+        <option value="ada_90">Ada, jarak ≤ 90 m</option>
+        <option value="ada_lebih">Ada, jarak &gt; 90 m</option>
         <option value="tidak">Belum ada</option>
       </select>
       <div class="field-hint"><strong>APAR</strong> adalah tabung pemadam portabel untuk digunakan pengguna jalan pada api awal (kebakaran kecil). NFPA 502 §7.9: rating min. <em>2A:20B:C</em>, berat maks. 9 kg, dipasang di lemari dinding setiap ≤ 90 m (± 300 ft). Rating 2A:20B:C artinya mampu memadamkan api kayu setara 2 unit + bensin 20 unit + api listrik.</div>
@@ -3479,7 +3509,8 @@ code {
             <input type="number" id="cv-H" class="cv-input" placeholder="mis. 5.0" min="2" max="12" step="0.1" value="" oninput="calcCV()">
             <span class="cv-unit">m</span>
           </div>
-          <div class="cv-presets">
+          <div class="cv-hint" id="cv-H-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Clearance Vertikal (Tahap 1)</div>
+          <div class="cv-presets" id="cv-H-presets">
             <span class="cv-preset" onclick="setCV('cv-H',4.5)">4.5m</span>
             <span class="cv-preset" onclick="setCV('cv-H',5.0)">5.0m</span>
             <span class="cv-preset" onclick="setCV('cv-H',5.5)">5.5m</span>
@@ -3493,8 +3524,8 @@ code {
             <input type="number" id="cv-A" class="cv-input" placeholder="mis. 50" min="10" max="300" step="0.5" value="" oninput="calcCV()">
             <span class="cv-unit">m²</span>
           </div>
-          <div class="cv-hint">≈ lebar efektif × tinggi efektif. Auto-hitung dari data Tahap 1 ↓</div>
-          <button class="cv-autofill" onclick="autoFillCV()">↺ Isi otomatis dari Tahap 1</button>
+          <div class="cv-hint" id="cv-A-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Luas Penampang (Tahap 1)</div>
+          <div class="cv-hint" id="cv-A-hint" style="display:none">≈ Lebar efektif × Tinggi efektif</div>
         </div>
 
         <div class="cv-field">
@@ -3516,6 +3547,7 @@ code {
             <input type="number" id="cv-grade" class="cv-input" placeholder="mis. 2.0" min="0" max="7" step="0.5" value="0" oninput="calcCV()">
             <span class="cv-unit">%</span>
           </div>
+          <div class="cv-hint" id="cv-grade-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Grade / Kelandaian (Tahap 1)</div>
           <div class="cv-hint">Grade mempengaruhi koreksi buoyancy: +grade naik = bantu ventilasi; −grade turun = lawan ventilasi</div>
         </div>
 
@@ -3591,7 +3623,6 @@ code {
         <div class="diagram-ctrl-label">Tampilan:</div>
         <button class="diagram-view-btn active" onclick="setDiagramView('longitudinal',this)">Tampak Atas / Denah</button>
         <button class="diagram-view-btn" onclick="setDiagramView('cross',this)">Potongan Melintang</button>
-        <button class="diagram-view-btn" onclick="setDiagramView('3d',this)">Perspektif 3D</button>
       </div>
       <canvas id="diagram-canvas" style="width:100%;display:block;border-radius:0 0 var(--radius) var(--radius)"></canvas>
       <div class="diagram-legend" id="diagram-legend"></div>
@@ -3601,7 +3632,7 @@ code {
   <!-- Ref Note -->
   <div class="callout callout-info" style="margin-top:24px">
     <span class="callout-icon">📌</span>
-    <div class="callout-body"><strong>Catatan Regulasi</strong>Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis lengkap dan konsultasi dengan AHJ / KKJTJ tetap wajib dilakukan. Persetujuan teknis dari KKJTJ diperlukan sebelum terowongan beroperasi (Permen PUPR 10/2022 Ps.4).</div>
+    <div class="callout-body"><strong>Catatan Regulasi</strong> Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis lengkap dan konsultasi dengan AHJ / KKJTJ tetap wajib dilakukan. Persetujuan teknis dari KKJTJ diperlukan sebelum terowongan beroperasi (Permen PUPR 10/2022 Ps.4). Rekomendasi ini dapat digunakan sebagai dasar perhitungan dengan metode <em>performance-based design</em>.</div>
   </div>
   </div><!-- end outpanel-rekomendasi -->
 
@@ -3627,7 +3658,7 @@ code {
   <!-- Ref Note (shown always) -->
   <div class="callout callout-info" style="margin-top:24px">
     <span class="callout-icon">📌</span>
-    <div class="callout-body"><strong>Catatan Regulasi</strong> Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis lengkap dan konsultasi dengan AHJ / KKJTJ tetap wajib dilakukan.</div>
+
   </div>
 
 </div><!-- end main-wrap -->
@@ -3994,16 +4025,60 @@ function alreadyOk(field, goodVals) {
 // ══════════════════════════════════════════════
 function buildStats() {
   const reqs = computeRequirements();
-  const wajib = reqs.filter(r => r.status === 'wajib').length;
-  const bersyarat = reqs.filter(r => r.status === 'bersyarat').length;
-  const rekomen = reqs.filter(r => r.status === 'rekomen').length;
-  const sudahAda = reqs.filter(r => r.alreadyOk).length;
+  const wajib     = reqs.filter(r => r.status === 'wajib');
+  const bersyarat = reqs.filter(r => r.status === 'bersyarat');
+  const rekomen   = reqs.filter(r => r.status === 'rekomen');
+  const sudahAda  = reqs.filter(r => r.alreadyOk);
 
+  function listItems(arr, dotCls) {
+    if (!arr.length) return '<div style="color:var(--text-muted);font-size:11px;padding:4px 0">—</div>';
+    return arr.map(r => `
+      <div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span style="width:7px;height:7px;border-radius:50%;background:${dotCls};flex-shrink:0;margin-top:4px"></span>
+        <span style="font-size:11px;color:var(--text);line-height:1.4">${r.title}${r.alreadyOk ? ' <span style=\"color:var(--accent3);font-size:10px\"">✓</span>' : ''}</span>
+      </div>`).join('');
+  }
+
+  const cat = getCategory();
   document.getElementById('out-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-num red">${wajib}</div><div class="stat-label">Fasilitas<br>WAJIB</div></div>
-    <div class="stat-card"><div class="stat-num orange">${bersyarat}</div><div class="stat-label">Wajib<br>Bersyarat</div></div>
-    <div class="stat-card"><div class="stat-num blue">${rekomen}</div><div class="stat-label">Direkomen-<br>dasikan</div></div>
-    <div class="stat-card"><div class="stat-num green">${sudahAda}</div><div class="stat-label">Sudah Ada /<br>Terencana</div></div>`;
+    <div class="stat-card stat-card-expand" onclick="toggleStatDetail('sd-wajib')">
+      <div class="stat-num red">${wajib.length}</div>
+      <div class="stat-label">Fasilitas<br>WAJIB</div>
+      <div class="stat-detail" id="sd-wajib">
+        <div style="font-size:10px;font-weight:700;color:var(--danger);margin-bottom:4px;text-transform:uppercase">Wajib — Kategori ${cat}</div>
+        ${listItems(wajib, 'var(--danger)')}
+      </div>
+    </div>
+    <div class="stat-card stat-card-expand" onclick="toggleStatDetail('sd-bersyarat')">
+      <div class="stat-num orange">${bersyarat.length}</div>
+      <div class="stat-label">Wajib<br>Bersyarat</div>
+      <div class="stat-detail" id="sd-bersyarat">
+        <div style="font-size:10px;font-weight:700;color:var(--warn);margin-bottom:4px;text-transform:uppercase">Wajib Bersyarat</div>
+        ${listItems(bersyarat, 'var(--warn)')}
+      </div>
+    </div>
+    <div class="stat-card stat-card-expand" onclick="toggleStatDetail('sd-rekomen')">
+      <div class="stat-num blue">${rekomen.length}</div>
+      <div class="stat-label">Direkomen-<br>dasikan</div>
+      <div class="stat-detail" id="sd-rekomen">
+        <div style="font-size:10px;font-weight:700;color:var(--accent2);margin-bottom:4px;text-transform:uppercase">Direkomendasikan</div>
+        ${listItems(rekomen, 'var(--accent2)')}
+      </div>
+    </div>
+    <div class="stat-card stat-card-expand" onclick="toggleStatDetail('sd-sudah')">
+      <div class="stat-num green">${sudahAda.length}</div>
+      <div class="stat-label">Sudah Ada /<br>Terencana</div>
+      <div class="stat-detail" id="sd-sudah">
+        <div style="font-size:10px;font-weight:700;color:var(--accent3);margin-bottom:4px;text-transform:uppercase">Sudah Ada / Terencana</div>
+        ${listItems(sudahAda, 'var(--accent3)')}
+      </div>
+    </div>`;
+}
+
+function toggleStatDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
 }
 
 function computeRequirements() {
@@ -4185,8 +4260,8 @@ function computeRequirements() {
 
   // ── CROSS-PASSAGEWAY ──
   if (tube === 'twin' || tube === 'triple') {
-    const hasCP = ['ada_200','ada_gt200'].includes(D.crosspassage);
-    const noCP  = D.crosspassage === 'twin_tanpa_cp';
+    const hasCP = ['ada_200','ada_300'].includes(D.crosspassage);
+    const noCP  = D.crosspassage === 'twin_tanpa_cp' || D.crosspassage === 'tidak_ada';
     reqs.push({
       id: 'cp', section: '🚪 Evakuasi',
       title: 'Cross-Passageway (Lorong Darurat Antar Tube)',
@@ -4574,7 +4649,7 @@ function buildScenarioSummary(data, containerId, subId) {
   const hgvLabel = { lt5:'<5%', '5_15':'5–15%', '15_30':'15–30%', gt30:'>30%' }[data.hgv] || '—';
   const fffsLabel = { deluge:'Deluge', mist:'Water Mist', foam:'Foam-Water', tidak:'Tidak Ada' }[data.fffs] || 'Tidak Ada';
   const ventLabel = { longitudinal:'Longitudinal', transverse:'Transverse', semi_trans:'Semi-Trans', alami:'Alami', tidak:'Tidak Ada' }[data.vent] || '—';
-  const cpLabel = { ada_200:'Ada ≤200m', ada_gt200:'Ada >200m', twin_tanpa_cp:'Twin tanpa CP', tidak:'Tidak Ada', belum:'Belum' }[data.crosspassage] || '—';
+  const cpLabel = { ada_200:'Ada ≤200m', ada_300:'Ada 200-300m', ada_gt300:'Ada >300m', tidak_ada:'Tidak Ada', twin_tanpa_cp:'Twin tanpa CP', tidak:'Tidak Ada', belum:'Belum' }[data.crosspassage] || '—';
 
   if (subId) document.getElementById(subId).textContent = `${data.nama || 'Proyek'} · Cat. ${cat} · ${pM} m`;
 
@@ -5139,25 +5214,38 @@ function setCV(id, val) {
 
 function autoFillCV() {
   // Pull from form data — fills H, A, grade, dan T_amb
-  const H = parseFloat(D.clearance) || 5.0;
+  const H = parseFloat(D.clearance) || 0;
   const lajur = parseInt(D.lajur) || 2;
   const lebar = parseFloat(D.lebar_lajur) || 3.5;
   const gradeMap = { '0_1': 0.5, '1_2': 1.5, '2_3': 2.5, '3_5': 4.0, 'gt5': 5.5 };
   const grade = gradeMap[D.grade] || 0;
-  // Use pre-computed luas penampang if available
-  const A = parseFloat(D.luas_penampang) || Math.round(lajur * lebar * H * 10) / 10;
-  // Estimasi T_amb dari elevasi (lapse rate 6.5°C/1000m dari baseline 30°C di permukaan laut)
+  const A = parseFloat(D.luas_penampang) || (H > 0 ? Math.round(lajur * lebar * H * 10) / 10 : 0);
   const elevasiMap = { 'rendah': 30, 'sedang': 26, 'tinggi': 20, 'sangat_tinggi': 15 };
   const T_amb = elevasiMap[D.elevasi] || 30;
 
-  document.getElementById('cv-H').value = H;
-  document.getElementById('cv-A').value = A;
-  document.getElementById('cv-grade').value = grade;
-  document.getElementById('cv-T').value = T_amb;
+  const hEl = document.getElementById('cv-H');
+  const aEl = document.getElementById('cv-A');
+  const gEl = document.getElementById('cv-grade');
+  const tEl = document.getElementById('cv-T');
 
-  // Tampilkan info apa yang di-autofill
-  const filled = [`H=${H}m`, `A=${A}m²`, `grade=${grade}%`, `T=${T_amb}°C`].join(', ');
-  showToast('ok', `✓ Autofill dari proyek: ${filled}`);
+  if (H > 0) {
+    hEl.value = H;
+    const hSrc = document.getElementById('cv-H-src');
+    const hPre = document.getElementById('cv-H-presets');
+    if (hSrc) hSrc.style.display = 'block';
+    if (hPre) hPre.style.display = 'none';
+  }
+  if (A > 0) {
+    aEl.value = A;
+    const aSrc = document.getElementById('cv-A-src');
+    if (aSrc) aSrc.style.display = 'block';
+  }
+  if (D.grade) {
+    gEl.value = grade;
+    const gSrc = document.getElementById('cv-grade-src');
+    if (gSrc) gSrc.style.display = 'block';
+  }
+  tEl.value = T_amb;
 
   calcCV();
 }
@@ -5465,7 +5553,7 @@ function drawDiagram() {
   // Sync internal canvas resolution to CSS display size (responsive fix)
   const dpr = window.devicePixelRatio || 1;
   const displayW = canvas.offsetWidth || 820;
-  const displayH = Math.round(displayW * (320 / 820));
+  const displayH = Math.round(displayW * (420 / 820));
   canvas.width  = displayW * dpr;
   canvas.height = displayH * dpr;
   canvas.style.height = displayH + 'px';
@@ -5474,7 +5562,6 @@ function drawDiagram() {
 
   if (currentDiagramView === 'longitudinal') drawLongitudinal(ctx, displayW, displayH);
   else if (currentDiagramView === 'cross') drawCrossSection(ctx, displayW, displayH);
-  else drawPerspective3D(ctx, displayW, displayH);
 
   buildLegend();
 }
@@ -5705,8 +5792,8 @@ function drawLongitudinal(ctx, W, H) {
   }
 
   // Cross-passages (twin tube only)
-  if (isTwin && ['ada_200','ada_gt200'].includes(D.crosspassage)) {
-    const spacing = D.crosspassage === 'ada_200' ? 200 : 250;
+  if (isTwin && ['ada_200','ada_300'].includes(D.crosspassage)) {
+    const spacing = D.crosspassage === 'ada_200' ? 200 : D.crosspassage === 'ada_300' ? 300 : 400;
     for (let pos = spacing; pos < m; pos += spacing) {
       const x = PAD + pos * scale;
       ctx.strokeStyle = 'rgba(16,185,129,0.7)';
@@ -6056,271 +6143,6 @@ function drawCrossSection(ctx, W, H) {
 }
 
 // ── PERSPECTIVE 3D — REWRITTEN ────────────────
-function drawPerspective3D(ctx, W, H) {
-  ctx.clearRect(0, 0, W, H);
-  const clearanceMap={'4.5':4.5,'5.0':5.0,'5.5':5.5,'6.0':6.0,'6.5':6.5};
-  const lajurMap={'1':1,'2':2,'3':3,'4':4};
-  const lebarMap={'3.0':3.0,'3.25':3.25,'3.5':3.5,'3.6':3.6,'3.75':3.75};
-  const trotoarMap={'ada_185':1.85,'ada_112':1.12,'ada_050':0.5,'ada_kecil':0.35,'tidak':0};
-  const H_cl=parseFloat(D.clearance)||5.0;
-  const nLajur=lajurMap[D.lajur]||2;
-  const wLajur=parseFloat(D.lebar_lajur)||3.5;
-  const wTrot=trotoarMap[D.trotoar]||0;
-  const totalW=nLajur*wLajur+wTrot*2;
-  const archH=H_cl*0.18;
-
-  // Sky
-  const skyG=ctx.createLinearGradient(0,0,0,H*0.42);
-  skyG.addColorStop(0,'#5ba3d4'); skyG.addColorStop(1,'#a8d5f0');
-  ctx.fillStyle=skyG; ctx.fillRect(0,0,W,H*0.42);
-
-  // Mountains
-  ctx.fillStyle='#6b8e6b';
-  ctx.beginPath(); ctx.moveTo(0,H*0.42);
-  [0,0.08,0.15,0.25,0.35,0.45,0.55,0.65,0.75,0.85,0.92,1].forEach((t,i)=>{
-    ctx.lineTo(W*t,H*[0.42,0.33,0.38,0.30,0.37,0.31,0.36,0.30,0.38,0.32,0.35,0.42][i]);
-  });
-  ctx.closePath(); ctx.fill();
-
-  // Hill around portal
-  ctx.fillStyle='#8B7355';
-  ctx.beginPath();
-  ctx.ellipse(W/2,H*0.40,W*0.50,H*0.34,0,0,Math.PI*2);
-  ctx.fill();
-
-  // Rock texture
-  ctx.fillStyle='#9c8e7a';
-  ctx.beginPath();
-  ctx.ellipse(W/2,H*0.38,W*0.44,H*0.28,0,0,Math.PI*2);
-  ctx.fill();
-
-  // Scale portal
-  const sc=Math.min((W*0.72)/totalW,(H*0.5)/H_cl,46);
-  const faceW=totalW*sc, faceH=H_cl*sc;
-  const faceCX=W/2, faceBottom=H*0.86, faceTop=faceBottom-faceH;
-  const faceLeft=faceCX-faceW/2, faceRight=faceCX+faceW/2;
-  const archPx=archH*sc, archApexY=faceTop-archPx;
-
-  // Headwall concrete
-  const hwP=faceW*0.18;
-  const hwT=faceTop-faceH*0.18;
-  ctx.fillStyle='#a09080';
-  ctx.fillRect(faceLeft-hwP,hwT,faceW+hwP*2,faceBottom-hwT+10);
-  // headwall texture
-  ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1;
-  for(let y=hwT+20;y<faceBottom;y+=22){
-    ctx.beginPath();ctx.moveTo(faceLeft-hwP,y);ctx.lineTo(faceRight+hwP,y);ctx.stroke();
-  }
-  for(let x=faceLeft-hwP;x<faceRight+hwP;x+=28){
-    ctx.beginPath();ctx.moveTo(x,hwT);ctx.lineTo(x,faceBottom+10);ctx.stroke();
-  }
-
-  // Portal opening (black = tunnel inside)
-  ctx.fillStyle='#0d0b09';
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceBottom);
-  ctx.lineTo(faceLeft,faceTop);
-  ctx.bezierCurveTo(faceLeft,archApexY,faceRight,archApexY,faceRight,faceTop);
-  ctx.lineTo(faceRight,faceBottom);
-  ctx.closePath(); ctx.fill();
-
-  // Portal border
-  ctx.strokeStyle='#6a5f55'; ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceBottom);ctx.lineTo(faceLeft,faceTop);
-  ctx.bezierCurveTo(faceLeft,archApexY,faceRight,archApexY,faceRight,faceTop);
-  ctx.lineTo(faceRight,faceBottom);
-  ctx.stroke();
-
-  // Vanishing point
-  const vx=W/2, vy=faceTop+faceH*0.32;
-  function vp(x,y){return{x:vx+(x-vx)*0.52,y:vy+(y-vy)*0.52};}
-
-  // Convergence lines (wall/ceiling)
-  const flFL=vp(faceLeft,faceBottom), flFR=vp(faceRight,faceBottom);
-  const wlT=vp(faceLeft,faceTop), wrT=vp(faceRight,faceTop);
-
-  // Floor converge
-  const floorG=ctx.createLinearGradient(0,faceBottom,0,vy);
-  floorG.addColorStop(0,'#2e2820'); floorG.addColorStop(1,'#18140f');
-  ctx.fillStyle=floorG;
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceBottom);ctx.lineTo(faceRight,faceBottom);
-  ctx.lineTo(flFR.x,flFR.y);ctx.lineTo(flFL.x,flFL.y);
-  ctx.closePath();ctx.fill();
-
-  // Left wall converge
-  const wGradL=ctx.createLinearGradient(faceLeft,0,vx,0);
-  wGradL.addColorStop(0,'#282218');wGradL.addColorStop(1,'#18140f');
-  ctx.fillStyle=wGradL;
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceBottom);ctx.lineTo(faceLeft,faceTop);
-  ctx.lineTo(wlT.x,wlT.y);ctx.lineTo(flFL.x,flFL.y);
-  ctx.closePath();ctx.fill();
-
-  // Right wall converge
-  const wGradR=ctx.createLinearGradient(faceRight,0,vx,0);
-  wGradR.addColorStop(0,'#282218');wGradR.addColorStop(1,'#18140f');
-  ctx.fillStyle=wGradR;
-  ctx.beginPath();
-  ctx.moveTo(faceRight,faceBottom);ctx.lineTo(faceRight,faceTop);
-  ctx.lineTo(wrT.x,wrT.y);ctx.lineTo(flFR.x,flFR.y);
-  ctx.closePath();ctx.fill();
-
-  // Ceiling converge
-  const ceilG=ctx.createLinearGradient(0,archApexY,0,faceTop);
-  ceilG.addColorStop(0,'#201c14');ceilG.addColorStop(1,'#181410');
-  ctx.fillStyle=ceilG;
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceTop);
-  ctx.bezierCurveTo(faceLeft,archApexY,faceRight,archApexY,faceRight,faceTop);
-  ctx.lineTo(wrT.x,wrT.y);ctx.lineTo(wlT.x,wlT.y);
-  ctx.closePath();ctx.fill();
-
-  // Interior glow
-  const glow=ctx.createRadialGradient(vx,vy,10,vx,vy,faceW*0.6);
-  glow.addColorStop(0,'rgba(255,240,160,0.22)');glow.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=glow;
-  ctx.beginPath();
-  ctx.moveTo(faceLeft,faceBottom);ctx.lineTo(faceRight,faceBottom);
-  ctx.lineTo(wrT.x,wrT.y);ctx.lineTo(wlT.x,wlT.y);
-  ctx.closePath();ctx.fill();
-
-  // Lane markings (converge)
-  ctx.strokeStyle='rgba(255,230,80,0.6)';ctx.lineWidth=2;ctx.setLineDash([12,10]);
-  for(let i=1;i<nLajur;i++){
-    const lx=faceLeft+(wTrot+i*wLajur)/totalW*faceW;
-    const lxFar=vp(lx,faceBottom);
-    ctx.beginPath();ctx.moveTo(lx,faceBottom);ctx.lineTo(lxFar.x,lxFar.y);ctx.stroke();
-  }
-  ctx.setLineDash([]);
-
-  // Walkway kerb lines (converge)
-  if(wTrot>0){
-    ['l','r'].forEach(side=>{
-      const kx=side==='l'?faceLeft+wTrot/totalW*faceW:faceRight-wTrot/totalW*faceW;
-      const kxFar=vp(kx,faceBottom);
-      ctx.strokeStyle='#f97316';ctx.lineWidth=2.5;
-      ctx.beginPath();ctx.moveTo(kx,faceBottom);ctx.lineTo(kxFar.x,kxFar.y);ctx.stroke();
-    });
-  }
-
-  // ── CEILING EQUIPMENT ──
-  const ceilTopY=archApexY+(faceTop-archApexY)*0.5;
-  const ceilMidY=ceilTopY+14;
-
-  // LHD cable
-  ctx.strokeStyle='#ef4444';ctx.lineWidth=2.5;ctx.setLineDash([8,6]);
-  ctx.beginPath();
-  ctx.moveTo(faceLeft+faceW*0.1,ceilMidY);
-  ctx.lineTo(faceRight-faceW*0.1,ceilMidY);
-  ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#ef4444';ctx.font='bold 8px DM Mono';ctx.textAlign='center';
-  ctx.fillText('KABEL LHD',W/2,ceilMidY-6);
-
-  // Jet fan
-  if(catGte('B')||['longitudinal','transverse','semi_trans'].includes(D.vent)){
-    const jfX=W/2,jfY=ceilMidY+18,jfRx=faceW*0.13,jfRy=faceH*0.07;
-    ctx.fillStyle='#10b981';ctx.shadowColor='#10b981';ctx.shadowBlur=14;
-    ctx.beginPath();ctx.ellipse(jfX,jfY,jfRx,jfRy,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-    ctx.strokeStyle='#065f46';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.ellipse(jfX,jfY,jfRx,jfRy,0,0,Math.PI*2);ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1;
-    for(let a=0;a<Math.PI*2;a+=Math.PI/4){
-      ctx.beginPath();ctx.moveTo(jfX,jfY);
-      ctx.lineTo(jfX+Math.cos(a)*jfRx*0.75,jfY+Math.sin(a)*jfRy*0.75);ctx.stroke();
-    }
-    ctx.fillStyle='white';ctx.font='bold 8px DM Sans';ctx.textAlign='center';
-    ctx.textBaseline='middle';ctx.fillText('JET FAN',jfX,jfY);ctx.textBaseline='alphabetic';
-    // airflow arrows
-    ctx.strokeStyle='rgba(16,185,129,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
-    ctx.beginPath();ctx.moveTo(faceLeft+faceW*0.09,ceilMidY);ctx.lineTo(faceLeft+faceW*0.27,ceilMidY);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(faceRight-faceW*0.09,ceilMidY);ctx.lineTo(faceRight-faceW*0.27,ceilMidY);ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // FFFS nozzles
-  if(['deluge','mist','foam'].includes(D.fffs)||catGte('D')){
-    [0.18,0.38,0.62,0.82].forEach(t=>{
-      const nx=faceLeft+t*faceW,ny=ceilMidY-5;
-      ctx.fillStyle='#06b6d4';ctx.shadowColor='#06b6d4';ctx.shadowBlur=6;
-      ctx.beginPath();ctx.arc(nx,ny,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      ctx.strokeStyle='rgba(6,182,212,0.4)';ctx.lineWidth=1;
-      for(let a=-35;a<=35;a+=18){
-        const rad=a*Math.PI/180;
-        ctx.beginPath();ctx.moveTo(nx,ny+5);ctx.lineTo(nx+Math.sin(rad)*20,ny+Math.cos(rad)*18);ctx.stroke();
-      }
-    });
-    ctx.fillStyle='#0891b2';ctx.font='bold 7px DM Mono';ctx.textAlign='center';
-    ctx.fillText('FFFS NOZZLE',faceLeft+faceW*0.5,ceilTopY+8);
-  }
-
-  // Lighting
-  [[faceLeft+faceW*0.1,faceLeft+faceW*0.24],[faceRight-faceW*0.24,faceRight-faceW*0.1]].forEach(([x1,x2])=>{
-    const lg=ctx.createLinearGradient((x1+x2)/2,faceTop+2,(x1+x2)/2,faceTop+40);
-    lg.addColorStop(0,'rgba(255,240,150,0.9)');lg.addColorStop(1,'rgba(255,240,150,0)');
-    ctx.fillStyle=lg;ctx.fillRect(x1,faceTop+2,x2-x1,40);
-    ctx.fillStyle='#fde68a';ctx.fillRect(x1,faceTop+2,x2-x1,5);
-  });
-
-  // Wall equipment
-  // APAR
-  ctx.fillStyle='#ef4444';
-  ctx.fillRect(faceLeft+10,faceBottom-faceH*0.42,16,28);
-  ctx.fillStyle='white';ctx.font='bold 7px DM Mono';ctx.textAlign='center';
-  ctx.fillText('APAR',faceLeft+18,faceBottom-faceH*0.45);
-  ctx.textBaseline='middle';ctx.fillText('🧯',faceLeft+18,faceBottom-faceH*0.29);ctx.textBaseline='alphabetic';
-
-  // SOS
-  ctx.fillStyle='#1d5fa8';
-  ctx.fillRect(faceRight-26,faceBottom-faceH*0.42,16,28);
-  ctx.fillStyle='white';ctx.font='bold 7px DM Mono';ctx.textAlign='center';
-  ctx.fillText('SOS',faceRight-18,faceBottom-faceH*0.45);
-  ctx.textBaseline='middle';ctx.fillText('☎',faceRight-18,faceBottom-faceH*0.29);ctx.textBaseline='alphabetic';
-
-  // EXIT sign
-  ctx.fillStyle='#16a34a';
-  ctx.fillRect(faceRight-56,faceTop+10,48,18);
-  ctx.fillStyle='white';ctx.font='bold 9px DM Sans';ctx.textAlign='center';
-  ctx.textBaseline='middle';ctx.fillText('EXIT ▶',faceRight-32,faceTop+19);ctx.textBaseline='alphabetic';
-
-  // Drain at portal base
-  ctx.fillStyle='#0284c7';
-  ctx.fillRect(faceLeft,faceBottom,faceW,8);
-
-  // Structural protection indicator
-  if(['rws_120','hc_120'].includes(D.struct)){
-    ctx.strokeStyle='#92400e';ctx.lineWidth=2.5;ctx.setLineDash([7,5]);
-    ctx.beginPath();
-    ctx.moveTo(faceLeft-8,faceBottom+4);
-    ctx.lineTo(faceLeft-8,faceTop-4);
-    ctx.bezierCurveTo(faceLeft-8,archApexY-8,faceRight+8,archApexY-8,faceRight+8,faceTop-4);
-    ctx.lineTo(faceRight+8,faceBottom+4);
-    ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#92400e';ctx.font='bold 8px DM Mono';ctx.textAlign='left';
-    ctx.fillText('PROTEKSI STRUKTUR API (RWS 120 mnt)',faceRight+12,archApexY);
-  }
-
-  // Road outside
-  ctx.fillStyle='#4a4035';ctx.fillRect(0,faceBottom,W,18);
-  ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2;ctx.setLineDash([16,12]);
-  [0.28,0.5,0.72].forEach(t=>{ctx.beginPath();ctx.moveTo(W*t,faceBottom);ctx.lineTo(W*t,faceBottom+18);ctx.stroke();});
-  ctx.setLineDash([]);
-
-  // VMS
-  if(D.vms==='ada'){
-    ctx.fillStyle='#1a1714';ctx.fillRect(faceLeft-hwP-2,faceTop-36,90,22);
-    ctx.fillStyle='#ec4899';ctx.font='bold 8px DM Mono';ctx.textAlign='left';
-    ctx.fillText('VMS ▸ PORTAL',faceLeft-hwP+4,faceTop-22);
-  }
-
-  // Title
-  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,W,26);
-  ctx.fillStyle='white';ctx.font='bold 11px DM Mono,monospace';ctx.textAlign='left';
-  ctx.fillText('PERSPEKTIF 3D — '+(D.nama||'TEROWONGAN')+' · Cat.'+getCategory()+' · '+H_cl+'m × '+totalW.toFixed(1)+'m lebar · NFPA 502:2026',10,17);
-  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Mono';ctx.textAlign='right';
-  ctx.fillText('TERAS · Skematik Ilustratif',W-10,17);
-}
 
 function buildLegend() {
   const items = [
@@ -7433,13 +7255,25 @@ async function loadCloudSession(id) {
     if (error) throw error;
     if (!data?.session_data) throw new Error('Data sesi tidak ditemukan');
 
-    validateAndStagSession(data.session_data, 'Cloud: ' + data.project_name);
+    const obj = data.session_data;
+    if (!obj.data || typeof obj.data !== 'object') {
+      showToast('err', '❌ Format sesi tidak dikenal.');
+      return;
+    }
+
+    // Langsung terapkan tanpa membuka modal-load
+    _loadedData = obj;
     closeModal('modal-cloud-sessions');
-    // Apply
     setTimeout(() => {
-      applyLoadedSession();
-      writeAuditLog('load', data.project_name, data.session_data);
-    }, 100);
+      const newD = obj.data;
+      Object.keys(D).forEach(k => delete D[k]);
+      Object.assign(D, newD);
+      repopulateForm();
+      markClean(obj._meta?.proyek || D.nama);
+      showToast('ok', '✓ Proyek cloud berhasil dimuat: ' + (data.project_name || D.nama));
+      goToStep(1);
+      writeAuditLog('load', data.project_name, obj);
+    }, 150);
   } catch(err) {
     showToast('err', '❌ Gagal muat cloud: ' + err.message);
   }
