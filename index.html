@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v19 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v20 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v19 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v20 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -3491,7 +3491,7 @@ code {
         <div class="cv-field">
           <label class="cv-label">Heat Release Rate (HRR) — Q <span class="cv-ref">NFPA 502 Annex B</span></label>
           <div class="cv-input-row">
-            <input type="number" id="cv-hrr" class="cv-input" placeholder="mis. 30" min="1" max="300" value="" oninput="calcCV()">
+            <input type="number" id="cv-hrr" class="cv-input" placeholder="mis. 5" min="1" max="300" value="5" oninput="calcCV()">
             <span class="cv-unit">MW</span>
           </div>
           <div class="cv-presets">
@@ -7071,7 +7071,7 @@ async function doRegister() {
   if (error) {
     showAuthErr('⛔ ' + error.message);
   } else {
-    showAuthOk('✓ Akun dibuat! Cek email Anda untuk konfirmasi, lalu masuk kembali.');
+    showAuthOk('✓ Akun TERAS berhasil dibuat! Cek email Anda (termasuk folder Spam) untuk konfirmasi dari Supabase – TERAS, lalu masuk kembali.');
     setTimeout(() => switchAuthTab('login'), 2500);
   }
 }
@@ -7242,8 +7242,7 @@ async function loadCloudSessions() {
         </div>
       </div>`).join('');
 
-    // Append audit log
-    await renderAuditLog(container);
+    // Riwayat aktivitas tidak ditampilkan di modal proyek
 
   } catch(err) {
     container.innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px">❌ Gagal memuat: ${escHtml(err.message)}<br><small>Periksa konfigurasi Supabase dan pastikan tabel <code>${SB_SESSION_TABLE}</code> sudah dibuat.</small></div>`;
