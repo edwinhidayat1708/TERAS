@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v18 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v19 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v18 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v19 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -3632,7 +3632,7 @@ code {
   <!-- Ref Note -->
   <div class="callout callout-info" style="margin-top:24px">
     <span class="callout-icon">📌</span>
-    <div class="callout-body"><strong>Catatan Regulasi</strong> Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis lengkap dan konsultasi dengan AHJ / KKJTJ tetap wajib dilakukan. Persetujuan teknis dari KKJTJ diperlukan sebelum terowongan beroperasi (Permen PUPR 10/2022 Ps.4). Rekomendasi ini dapat digunakan sebagai dasar perhitungan dengan metode <em>performance-based design</em>.</div>
+    <div class="callout-body"><strong>Catatan Regulasi</strong> Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis yang komprehensif harus dilakukan dengan pihak yang berwenang. Persetujuan teknis dari KKJTJ diperlukan untuk terowongan dengan bagian tertutup &gt;200 m (Permen PUPR 10/2022). Rekomendasi dari TERAS digunakan sebagai dasar perhitungan dengan metode <em>performance-based design</em>.</div>
   </div>
   </div><!-- end outpanel-rekomendasi -->
 
@@ -3655,11 +3655,7 @@ code {
     <div id="erp-content"></div>
   </div><!-- end outpanel-erp -->
 
-  <!-- Ref Note (shown always) -->
-  <div class="callout callout-info" style="margin-top:24px">
-    <span class="callout-icon">📌</span>
 
-  </div>
 
 </div><!-- end main-wrap -->
 
@@ -5213,39 +5209,50 @@ function setCV(id, val) {
 }
 
 function autoFillCV() {
-  // Pull from form data — fills H, A, grade, dan T_amb
-  const H = parseFloat(D.clearance) || 0;
-  const lajur = parseInt(D.lajur) || 2;
-  const lebar = parseFloat(D.lebar_lajur) || 3.5;
-  const gradeMap = { '0_1': 0.5, '1_2': 1.5, '2_3': 2.5, '3_5': 4.0, 'gt5': 5.5 };
-  const grade = gradeMap[D.grade] || 0;
-  const A = parseFloat(D.luas_penampang) || (H > 0 ? Math.round(lajur * lebar * H * 10) / 10 : 0);
-  const elevasiMap = { 'rendah': 30, 'sedang': 26, 'tinggi': 20, 'sangat_tinggi': 15 };
-  const T_amb = elevasiMap[D.elevasi] || 30;
-
+  // H — dari clearance Tahap 1, default 5.0
+  const H = parseFloat(D.clearance) || 5.0;
   const hEl = document.getElementById('cv-H');
-  const aEl = document.getElementById('cv-A');
-  const gEl = document.getElementById('cv-grade');
-  const tEl = document.getElementById('cv-T');
-
-  if (H > 0) {
-    hEl.value = H;
-    const hSrc = document.getElementById('cv-H-src');
-    const hPre = document.getElementById('cv-H-presets');
+  hEl.value = H;
+  const hSrc = document.getElementById('cv-H-src');
+  const hPre = document.getElementById('cv-H-presets');
+  if (D.clearance) {
     if (hSrc) hSrc.style.display = 'block';
     if (hPre) hPre.style.display = 'none';
   }
-  if (A > 0) {
-    aEl.value = A;
-    const aSrc = document.getElementById('cv-A-src');
+
+  // A — dari luas_penampang Tahap 1, fallback hitung dari dimensi, default 35
+  const lajur = parseInt(D.lajur) || 2;
+  const lebar = parseFloat(D.lebar_lajur) || 3.5;
+  const A = parseFloat(D.luas_penampang) || Math.round(lajur * lebar * H * 10) / 10 || 35;
+  const aEl = document.getElementById('cv-A');
+  aEl.value = A;
+  const aSrc = document.getElementById('cv-A-src');
+  if (D.luas_penampang || D.lebar_lajur) {
     if (aSrc) aSrc.style.display = 'block';
   }
+
+  // Grade — dari grade Tahap 1, default 0
+  const gradeMap = { '0_1': 0.5, '1_2': 1.5, '2_3': 2.5, '3_5': 4.0, 'gt5': 5.5 };
+  const grade = D.grade ? (gradeMap[D.grade] || 0) : 0;
+  const gEl = document.getElementById('cv-grade');
+  gEl.value = grade;
+  const gSrc = document.getElementById('cv-grade-src');
   if (D.grade) {
-    gEl.value = grade;
-    const gSrc = document.getElementById('cv-grade-src');
     if (gSrc) gSrc.style.display = 'block';
   }
-  tEl.value = T_amb;
+
+  // T — dari elevasi, default 30°C (tropis)
+  const elevasiMap = { 'rendah': 30, 'sedang': 26, 'tinggi': 20, 'sangat_tinggi': 15 };
+  const T_amb = elevasiMap[D.elevasi] || 30;
+  document.getElementById('cv-T').value = T_amb;
+
+  // HRR — default 5 MW (sedan) jika belum diisi
+  const hrrEl = document.getElementById('cv-hrr');
+  if (!hrrEl.value) hrrEl.value = 5;
+
+  // chi — default 0.7 (kendaraan) jika belum diisi
+  const chiEl = document.getElementById('cv-chi');
+  if (!chiEl.value) chiEl.value = 0.7;
 
   calcCV();
 }
@@ -7344,7 +7351,7 @@ if (_origGenerateResult) {
 // ── HELPER: openModal (reuse existing pattern) ─
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.style.display = 'flex';
+  if (m) m.classList.add('open');
 }
 
 // ── HELPERS ───────────────────────────────────
