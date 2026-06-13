@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v20 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v21 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v20 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v21 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -2704,7 +2704,7 @@ code {
       <div style="display:flex;align-items:center;gap:8px">
         <input type="number" id="f-clearance" placeholder="mis. 5.00" min="3.5" max="10.0" step="0.01"
           style="flex:1;padding:10px 12px;font-size:16px;font-family:'DM Mono',monospace;font-weight:600;border:1.5px solid var(--border);border-radius:var(--radius-sm);outline:none;color:var(--text);background:#fff;transition:border-color 0.2s"
-          oninput="saveField('clearance',this.value); calcLuasPenampang()">
+          oninput="saveField('clearance',this.value); calcLuasPenampang(); (function(){const el=document.getElementById('cv-H'); if(el){el.value=this.value||5; const s=document.getElementById('cv-H-src'); if(s)s.style.display='block'; const p=document.getElementById('cv-H-presets'); if(p)p.style.display='none'; calcCV();}}).call(this)">
         <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;white-space:nowrap">meter</span>
       </div>
       <div class="field-hint">Min. 4,5 m (Permen PUPR 5/2023 Lamp.I Tab.2) · Min. 4,3 m jalan bebas hambatan (AASHTO GDHS-7 §3.3) · Pengaruh langsung pada dispersi panas kebakaran dan performa ventilasi (NFPA 502:2026 Annex D §D.2.4)</div>
@@ -2720,14 +2720,14 @@ code {
           style="flex:1;padding:10px 12px;font-size:20px;font-family:'DM Mono',monospace;font-weight:700;border:1.5px solid rgba(26,86,196,0.3);border-radius:var(--radius-sm);outline:none;color:var(--accent2);background:white;cursor:default">
         <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent2);background:rgba(26,86,196,0.1);border:1px solid rgba(26,86,196,0.2);border-radius:4px;padding:8px 10px;white-space:nowrap">m²</span>
       </div>
-      <div class="field-hint" style="color:var(--accent2)">= Lebar Lajur Efektif × Jumlah Lajur × Tinggi Ruang Bebas Efektif · Terisi otomatis · Digunakan dalam kalkulasi Critical Velocity</div>
+      <div class="field-hint" style="color:var(--accent2)">= (Jumlah Lajur × Lebar Lajur + 2 × Bahu Jalan + 2 × Trotoar) × Tinggi Ruang Bebas Efektif · Trotoar default: 0 m (&lt;0,5m/tidak ada), 0,5 m (0,5–1,84m), 1,85 m (≥1,85m) · Terisi otomatis · Digunakan dalam kalkulasi Critical Velocity</div>
     </div>
   </div>
 
   <div class="form-grid cols-3">
     <div class="field" id="field-trotoar">
       <div class="field-label">Trotoar / Jalur Pejalan Kaki <span class="field-ref fr-permen">Permen PUPR 5/2023 Lamp.I Tab.3 + NFPA 502 §7.16.6.3.2</span></div>
-      <select id="f-trotoar" onchange="saveField('trotoar',this.value)">
+      <select id="f-trotoar" onchange="saveField('trotoar',this.value); calcLuasPenampang()">
         <option value="">— Pilih —</option>
         <option value="ada_185">Ada, lebar ≥ 1,85 m</option>
         <option value="ada_050">Ada, lebar 0,5 – 1,84 m</option>
@@ -2745,7 +2745,7 @@ code {
       <div style="display:flex;align-items:center;gap:8px">
         <input type="number" id="f-bahu" placeholder="0 jika tidak ada bahu" min="0" max="5.0" step="0.1"
           style="flex:1;padding:10px 12px;font-size:16px;font-family:'DM Mono',monospace;font-weight:600;border:1.5px solid var(--border);border-radius:var(--radius-sm);outline:none;color:var(--text);background:#fff;transition:border-color 0.2s"
-          oninput="saveField('bahu',this.value)">
+          oninput="saveField('bahu',this.value); calcLuasPenampang()">
         <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;white-space:nowrap">meter</span>
       </div>
       <div class="field-hint">Permen PUPR 5/2023 Ps.5 ayat (3): bahu jalan pada jalan bebas hambatan min. 2,5 m (penuh) atau 1,0 m (diperkeras). Isi 0 jika tidak ada bahu. Bahu ≥ 1,0 m dapat menjadi bagian jalur evakuasi.</div>
@@ -3748,14 +3748,28 @@ function handlePanjangActualInput(val) {
 }
 
 // Hitung luas penampang otomatis
+// Rumus: (nLajur × lebarLajur + 2×bahu + 2×trotoar) × tinggi
+// Sesuai NFPA 502:2026 Annex D §D.2.4
 function calcLuasPenampang() {
   const lebar   = parseFloat(document.getElementById('f-lebar-lajur')?.value) || 0;
   const tinggi  = parseFloat(document.getElementById('f-clearance')?.value) || 0;
   const nLajur  = parseInt(document.getElementById('f-lajur')?.value) || 1;
+  const bahuVal = parseFloat(document.getElementById('f-bahu')?.value) || 0;
+
+  // Trotoar default berdasarkan opsi dropdown:
+  // 'ada_185' (≥1,85m) → default 1,85 m
+  // 'ada_050' (0,5–1,84m) → default 0,5 m
+  // 'tidak' (<0,5m atau tidak ada) → default 0 m
+  const trotoarSel = document.getElementById('f-trotoar')?.value || '';
+  const trotoarDefault = trotoarSel === 'ada_185' ? 1.85
+                       : trotoarSel === 'ada_050' ? 0.5
+                       : 0; // 'tidak' atau belum dipilih
+
   const el = document.getElementById('f-luas');
   if (!el) return;
   if (lebar > 0 && tinggi > 0) {
-    const A = (lebar * nLajur * tinggi).toFixed(2);
+    const lebarTotal = (nLajur * lebar) + (2 * bahuVal) + (2 * trotoarDefault);
+    const A = (lebarTotal * tinggi).toFixed(2);
     el.value = A;
     saveField('luas_penampang', A);
     // Also update CV calculator if open
@@ -5209,7 +5223,7 @@ function setCV(id, val) {
 }
 
 function autoFillCV() {
-  // H — dari clearance Tahap 1, default 5.0
+  // H — langsung link dari clearance Tahap 1, default 5.0
   const H = parseFloat(D.clearance) || 5.0;
   const hEl = document.getElementById('cv-H');
   hEl.value = H;
@@ -5220,7 +5234,7 @@ function autoFillCV() {
     if (hPre) hPre.style.display = 'none';
   }
 
-  // A — dari luas_penampang Tahap 1, fallback hitung dari dimensi, default 35
+  // A — langsung link dari luas_penampang Tahap 1, fallback hitung dari dimensi, default 35
   const lajur = parseInt(D.lajur) || 2;
   const lebar = parseFloat(D.lebar_lajur) || 3.5;
   const A = parseFloat(D.luas_penampang) || Math.round(lajur * lebar * H * 10) / 10 || 35;
@@ -5272,32 +5286,30 @@ function calcCV() {
     wrap.style.display = 'none'; empty.style.display = 'block'; return;
   }
 
-  // Constants
-  const g = 9.81;       // m/s²
-  const rho = 1.2;      // kg/m³ at STP (adjusted later)
-  const cp = 1005;      // J/kg·K
-  const k = 0.606;      // empirical constant NFPA 502:2026
-
   const T_amb_K = T_amb + 273.15;
-  const Q_conv = Q_total * 1e6 * chi; // Watts (convective)
+  const Q_conv = Q_total * 1e6 * chi; // Watts (convective heat release rate)
 
-  // Temperature rise at fire (Alpert correlation approximation for ΔT)
-  const deltaT = Q_conv / (rho * cp * A * 1.0); // simplified, m/s assumed ~1 initially
-  const T_f_K = T_amb_K + deltaT;
+  // NFPA 502:2026 Annex D.2.4 — Critical Velocity formula:
+  // Vc = k × [ g × H × Q_conv / (ρ_amb × cp × T_f × A) ]^(1/3)
+  // where T_f is the plume temperature (K), solved iteratively.
+  //
+  // Iteration: assume initial Vc → compute ΔT = Q_conv/(ρ·cp·A·Vc) → new T_f → new Vc
+  // Converges in 5–10 iterations.
+  const g = 9.81;      // m/s²
+  const rho = 1.2;     // kg/m³ ambient density at ~20°C (conservative)
+  const cp = 1005;     // J/(kg·K)
+  const k = 0.606;     // empirical constant NFPA 502:2026 Annex D
 
-  // NFPA 502:2026 Annex D.2.4 — critical velocity
-  const Vc_raw = k * Math.pow((g * H * Q_conv) / (rho * cp * T_f_K * A), 1 / 3);
+  let Vc = 3.0; // initial guess (m/s)
+  for (let i = 0; i < 20; i++) {
+    const deltaT = Q_conv / (rho * cp * A * Vc); // temperature rise (K)
+    const T_f_K = T_amb_K + deltaT;               // plume temperature (K)
+    const Vc_new = k * Math.pow((g * H * Q_conv) / (rho * cp * T_f_K * A), 1 / 3);
+    if (Math.abs(Vc_new - Vc) < 0.001) { Vc = Vc_new; break; }
+    Vc = Vc_new;
+  }
 
-  // Grade correction factor (buoyancy assist/oppose)
-  // +grade helps ventilate fire gases going uphill; use θ in radians
-  const theta = Math.atan(grade_pct / 100);
-  const Fg = 1 + 0.026 * grade_pct; // simplified linear correction
-  let Vc = Vc_raw;
-  // If uphill: grade assists → lower Vc needed; if downhill: grade opposes → higher Vc needed
-  // For simplicity: opposing grade (downhill fire) is worst case, no correction beneficial case
-  Vc = Vc_raw; // base; designer must apply CFD for grade correction > 3%
-
-  // Recalculate ΔT more accurately using Vc
+  // Final temperature values for display
   const deltaT_final = Q_conv / (rho * cp * A * Vc);
   const T_f_final = T_amb + deltaT_final;
 
@@ -5358,23 +5370,28 @@ function buildTenabilityCheck(Q_MW, T_f, Vc, A) {
 
 function buildJetFanRec(Vc, A, Q_MW) {
   const el = document.getElementById('cv-jetfan');
-  // Typical jet fan thrust per fan: 300-1000 N
-  // Approximate: airflow needed = Vc * A (m³/s)
-  // Typical jet fan: 40 m³/s per unit at 16 m/s jet velocity
-  const Q_needed = Vc * A;
-  const jfThrust = 700; // N (typical 45kW jet fan)
+  // Thrust jet fan tipikal berdasarkan kapasitas motor:
+  //   ~300–400 N : jet fan kecil (15–22 kW, reversible)
+  //   ~450 N     : jet fan menengah (30 kW, tipikal terowongan 2-lajur)
+  //   ~700 N     : jet fan besar (45 kW, terowongan perkotaan/highway lebar)
+  //   ~1000 N+   : jet fan heavy-duty (>60 kW)
+  // Default konservatif: 450 N (30 kW) untuk estimasi awal.
+  // Gunakan spesifikasi thrust aktual vendor untuk desain final.
+  const jfThrust = 450; // N (30 kW jet fan, tipikal terowongan 2-lajur)
   const rho = 1.2;
-  // Momentum approach: n_fans ≈ (rho * A * Vc² * F_loss) / (thrust_per_fan)
-  // F_loss factor ~1.5 for obstructions
+  // Momentum approach: n_fans ≈ (ρ × A × Vc² × F_loss) / thrust_per_fan
+  // F_loss factor ~1.5 untuk obstruksi standar (kendaraan, dinding) + tambahan untuk HRR besar
   const F_loss = 1.5 + (Q_MW / 100) * 0.5;
   const nFans = Math.ceil((rho * A * Vc * Vc * F_loss) / jfThrust);
+  const nFans700 = Math.ceil((rho * A * Vc * Vc * F_loss) / 700); // juga tampilkan untuk 700N
   const interval = D.panjang_m ? (parseFloat(D.panjang_m) / nFans).toFixed(0) : '—';
 
   el.innerHTML = `<strong>💨 Estimasi Kebutuhan Jet Fan (Ventilasi Longitudinal)</strong>
-    Debit udara yang dibutuhkan: <strong>${Q_needed.toFixed(1)} m³/s</strong> pada Vc = ${Vc.toFixed(2)} m/s<br>
-    Estimasi jumlah jet fan (asumsi thrust ~700 N/unit, faktor hambatan ${F_loss.toFixed(1)}×): <strong>~${nFans} unit</strong><br>
-    Interval antar fan (jika total panjang ${D.panjang_m || '—'} m): <strong>~${interval} m</strong><br>
-    <span style="font-size:11px;opacity:0.8">⚠ Ini estimasi awal. Desain final jet fan wajib melalui simulation/CFD dan dikonsultasikan dengan vendor. Untuk grade > 3%, lakukan analisis koreksi buoyancy tersendiri (NFPA 502:2026 Annex D).</span>`;
+    Debit udara yang dibutuhkan: <strong>${(Vc * A).toFixed(1)} m³/s</strong> pada Vc = ${Vc.toFixed(2)} m/s<br>
+    Estimasi jumlah jet fan dengan thrust 450 N/unit (~30 kW), faktor hambatan ${F_loss.toFixed(1)}×: <strong>~${nFans} unit</strong><br>
+    Perbandingan dengan thrust 700 N/unit (~45 kW): <strong>~${nFans700} unit</strong><br>
+    Interval antar fan (panjang ${D.panjang_m || '—'} m, asumsi 450N): <strong>~${interval} m</strong><br>
+    <span style="font-size:11px;opacity:0.8">⚠ Thrust 450 N (30 kW) adalah asumsi konservatif untuk estimasi awal. Jet fan 45 kW ≈ 700 N, jet fan &gt;60 kW ≈ 1000 N. Desain final wajib menggunakan spesifikasi thrust aktual dari vendor dan diverifikasi melalui simulasi/CFD (NFPA 502:2026 Annex D). Untuk grade &gt; 3%, analisis koreksi buoyancy tersendiri diperlukan.</span>`;
 }
 
 function drawCVChart(H, A, T_amb, chi, Vc_current, Q_current) {
