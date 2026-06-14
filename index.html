@@ -1,18 +1,5 @@
 <!DOCTYPE html>
-<!--
-  ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v22 — Setup untuk GitHub Pages                   ║
-  ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
-  ║                                                          ║
-  ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
-  ║         const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY'    ║
-  ║                                                          ║
-  ║  Isi dengan URL + Anon Key dari:                         ║
-  ║  supabase.com → Project → Settings → API                ║
-  ║                                                          ║
-  ║  Anon Key aman dipublikasi — akses dikendalikan RLS.     ║
-  ╚══════════════════════════════════════════════════════════╝
--->
+
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -1969,7 +1956,6 @@ code {
 
 /* Profile dropdown */
 
-
 /* ══ AUTOSAVE ══ */
 .autosave-dot { font-size:9px; color:var(--text-dim); transition:color .5s; cursor:default; user-select:none; }
 .autosave-dot.saved { color:var(--accent3); }
@@ -1985,7 +1971,6 @@ code {
 /* ══ DARK TOGGLE ══ */
 
 /* ══ DARK MODE ══ */
-
 
 /* ══ FIELD VALIDATION ══ */
 .field-missing {
@@ -2040,7 +2025,6 @@ code {
 
   @page { size:A4 portrait; margin:18mm 15mm; }
 }
-
 
 /* ══════════════════════════════════════════════════
    SUPABASE AUTH UI
@@ -2260,14 +2244,10 @@ code {
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════
-     SUPABASE SDK
-══════════════════════════════════════════════ -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-<!-- ══════════════════════════════════════════════
-     SUPABASE CONFIG MODAL (first-time setup)
-══════════════════════════════════════════════ -->
+
 <div class="supabase-config-modal" id="modal-sb-config">
   <div class="supabase-config-box">
     <div class="sb-config-title">⚙️ Info Supabase (Admin)</div>
@@ -2290,9 +2270,7 @@ code {
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     AUTH MODAL (Login / Register)
-══════════════════════════════════════════════ -->
+
 <div class="auth-modal-overlay" id="modal-auth" style="display:none">
   <div class="auth-modal">
     <div class="auth-logo">
@@ -2350,7 +2328,7 @@ code {
   </div>
 </div>
 
-<!-- TOPBAR -->
+
 <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:8px 16px;background:var(--accent);color:white;font-weight:600;border-radius:0 0 6px 0;text-decoration:none">Langsung ke konten utama</a>
 <header class="topbar" role="banner" aria-label="Navigasi TERAS">
   <div class="topbar-brand">
@@ -2359,7 +2337,7 @@ code {
   </div>
   <div class="topbar-sep"></div>
 
-  <!-- Save/Load actions -->
+  
   <div class="topbar-actions">
     <span class="unsaved-badge" id="unsaved-badge">● BELUM DISIMPAN</span>
     <span class="autosave-dot" id="autosave-dot" title="Autosave aktif">⬤</span>
@@ -2376,7 +2354,7 @@ code {
 
   <div class="topbar-sep" style="flex:0;width:12px"></div>
 
-  <!-- Login / User Chip -->
+  
   <div id="auth-login-chip" style="display:none">
     <button class="topbar-btn" onclick="openAuthModal()" style="background:rgba(139,105,4,.25);border-color:rgba(139,105,4,.6);color:#f5c842">
       👤 Masuk
@@ -2406,9 +2384,7 @@ code {
   <div class="topbar-tag">Terowongan Aman dan Selamat · Decision Support Tool</div>
 </header>
 
-<!-- ══════════════════════════════════════════════
-     MODAL: SAVE
-══════════════════════════════════════════════ -->
+
 <div class="modal-overlay" id="modal-save">
   <div class="modal-box">
     <div class="modal-head">
@@ -2420,14 +2396,14 @@ code {
       <button class="modal-close" onclick="closeModal('modal-save')">✕</button>
     </div>
     <div class="modal-body">
-      <!-- Metadata -->
+      
       <div class="save-meta" id="save-meta"></div>
 
-      <!-- JSON Preview -->
+      
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);font-family:'DM Mono',monospace;margin-bottom:6px">Preview JSON</div>
       <div class="save-json-wrap" id="save-json-preview"></div>
 
-      <!-- Recent sessions stored in localStorage -->
+      
       <div class="recent-sessions" id="recent-sessions-wrap">
         <div class="recent-title">Sesi tersimpan di browser (localStorage)</div>
         <div id="recent-sessions-list"></div>
@@ -2440,9 +2416,7 @@ code {
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     MODAL: LOAD
-══════════════════════════════════════════════ -->
+
 <div class="modal-overlay" id="modal-load">
   <div class="modal-box">
     <div class="modal-head">
@@ -2454,7 +2428,7 @@ code {
       <button class="modal-close" onclick="closeModal('modal-load')">✕</button>
     </div>
     <div class="modal-body">
-      <!-- Dropzone -->
+      
       <div class="load-dropzone" id="load-dropzone">
         <input type="file" id="load-file-input" accept=".json" onchange="handleFileLoad(event)">
         <div class="load-dropzone-icon">📁</div>
@@ -2462,13 +2436,13 @@ code {
         <div class="load-dropzone-hint">Format: TERAS session (.json)</div>
       </div>
 
-      <!-- Preview loaded file -->
+      
       <div class="load-preview" id="load-preview">
         <div class="load-preview-title">✓ File Terdeteksi — Pratinjau Data</div>
         <div class="load-preview-grid" id="load-preview-grid"></div>
       </div>
 
-      <!-- localStorage sessions -->
+      
       <div class="recent-sessions" id="load-recent-wrap">
         <div class="recent-title">Atau muat dari sesi tersimpan di browser</div>
         <div id="load-recent-list"></div>
@@ -2482,7 +2456,7 @@ code {
   </div>
 </div>
 
-<!-- CLOUD SESSIONS MODAL -->
+
 <div class="modal-overlay" id="modal-cloud-sessions">
   <div class="modal-box" style="max-width:560px">
     <div class="modal-head">
@@ -2508,25 +2482,25 @@ code {
   </div>
 </div>
 
-<!-- AUDIT LOG PANEL in Save Modal (injected later) -->
 
-<!-- TOAST -->
+
+
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- COMPARE BANNER -->
+
 <div class="compare-bar" id="compare-bar" style="display:none">
   <span>⚖ Mode Perbandingan — <strong id="compare-names"></strong></span>
   <button class="btn btn-ghost" style="padding:3px 10px;font-size:12px" onclick="exitCompare()">✕ Keluar</button>
 </div>
 
-<!-- DRAFT RESTORE BANNER -->
+
 <div class="draft-banner" id="draft-banner" style="display:none">
   <span>💾 Ada draft tersimpan dari sesi sebelumnya — <strong id="draft-time"></strong></span>
   <button class="btn btn-secondary" style="padding:4px 12px;font-size:12px" onclick="restoreDraft()">Pulihkan</button>
   <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="dismissDraft()">Abaikan</button>
 </div>
 
-<!-- HERO -->
+
 <div class="hero-band">
   <div class="hero-eyebrow">TERAS · Terowongan Aman dan Selamat</div>
   <h1 class="hero-title"><em>Decision Support Tool</em><br>untuk Operasional Terowongan</h1>
@@ -2539,7 +2513,7 @@ code {
   </div>
 </div>
 
-<!-- STEPPER -->
+
 <div class="stepper-wrap">
   <div class="stepper">
     <div class="step-item active" id="step-1" onclick="goToStep(1)">
@@ -2574,12 +2548,10 @@ code {
   </div>
 </div>
 
-<!-- MAIN -->
+
 <div class="main-wrap" id="main-content">
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 1 — Geometri & Konfigurasi
-════════════════════════════════════════════════════ -->
+
 <div class="stage active" id="stage-1">
   <div class="stage-header">
     <div class="stage-num">Tahap 01 / 05</div>
@@ -2589,7 +2561,7 @@ code {
     </div>
   </div>
 
-  <!-- Identitas -->
+  
   <div class="section-divider"><div class="section-divider-label">Identitas Proyek</div><div class="section-divider-line"></div></div>
   <div class="form-grid cols-3">
     <div class="field span-full">
@@ -2618,7 +2590,7 @@ code {
     </div>
   </div>
 
-  <!-- Dimensi Utama -->
+  
   <div class="section-divider"><div class="section-divider-label">Dimensi Utama</div><div class="section-divider-line"></div></div>
 
   <div class="callout callout-info">
@@ -2650,7 +2622,7 @@ code {
         <div style="text-align:center"><div style="font-weight:700;color:#b51c18;font-family:'DM Mono',monospace;font-size:12px">D</div><div style="color:var(--text-muted);font-size:10px">≥ 1.000 m</div><div style="color:var(--text-dim);font-size:9px">FFFS wajib mutlak</div></div>
       </div>
       <div class="field-alert info" id="alert-panjang"></div>
-      <!-- hidden select for backward-compat with computeRequirements() -->
+      
       <select id="f-panjang" style="display:none" onchange="handlePanjangChange()">
         <option value="">—</option>
         <option value="X">X</option><option value="A">A</option>
@@ -2711,7 +2683,7 @@ code {
     </div>
   </div>
 
-  <!-- 5: LUAS PENAMPANG EFEKTIF — auto-computed -->
+  
   <div class="form-grid cols-3">
     <div class="field" style="border:2px solid var(--accent2);background:var(--accent2-light)">
       <div class="field-label" style="color:var(--accent2)">Luas Penampang Efektif (A) <span class="field-ref fr-nfpa">NFPA 502:2026 Annex D §D.2.4</span></div>
@@ -2762,7 +2734,7 @@ code {
     </div>
   </div>
 
-  <!-- Geometrik -->
+  
   <div class="section-divider"><div class="section-divider-label">Geometrik Jalan</div><div class="section-divider-line"></div></div>
 
   <div class="form-grid">
@@ -2811,7 +2783,7 @@ code {
     </div>
   </div>
 
-  <!-- Cross-passageway — moved here after removing VR & Konstruksi -->
+  
   <div class="form-grid">
     <div class="field" id="field-cross-passage">
       <div class="field-label">Cross-Passageway (Lorong Darurat Antar Tube) <span class="field-ref fr-nfpa">NFPA 502 §7.16.6.7</span></div>
@@ -2836,9 +2808,7 @@ code {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 2 — Lalu Lintas
-════════════════════════════════════════════════════ -->
+
 <div class="stage" id="stage-2">
   <div class="stage-header">
     <div class="stage-num">Tahap 02 / 05</div>
@@ -2887,14 +2857,14 @@ code {
 
   <div class="section-divider"><div class="section-divider-label">Komposisi Kendaraan</div><div class="section-divider-line"></div></div>
 
-  <!-- REVISI: % Jenis Kendaraan — total harus 100% -->
+  
   <div class="callout callout-info" style="margin-bottom:14px">
     <span class="callout-icon">ℹ️</span>
     <div class="callout-body"><strong>% Komposisi Kendaraan</strong> Total keempat jenis kendaraan harus berjumlah <strong>100%</strong>. Komposisi ini menentukan <em>Design Fire HRR</em> (Heat Release Rate) yang menjadi dasar desain ventilasi dan FFFS. Isi berdasarkan data survei atau estimasi desain.</div>
   </div>
 
   <div class="form-grid cols-3">
-    <!-- % Bus -->
+    
     <div class="field" id="field-pct-bus">
       <div class="field-label">% Bus <span class="field-ref fr-nfpa">NFPA 502 Annex B — HRR 20–30 MW</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2906,7 +2876,7 @@ code {
       <div class="field-hint">Bus umum, bus pariwisata, shuttle. HRR desain 20–30 MW; meningkatkan jumlah orang yang perlu dievakuasi (40–60 penumpang/bus)</div>
     </div>
 
-    <!-- % Minibus/Sedang -->
+    
     <div class="field" id="field-pct-minibus">
       <div class="field-label">% Minibus / Kendaraan Sedang <span class="field-ref fr-nfpa">NFPA 502 Annex B — HRR 10–20 MW</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2918,7 +2888,7 @@ code {
       <div class="field-hint">Minibus, van, pick-up, kendaraan medium lainnya</div>
     </div>
 
-    <!-- % Kendaraan Penumpang -->
+    
     <div class="field" id="field-pct-sedan">
       <div class="field-label">% Kendaraan Penumpang <span class="field-ref fr-nfpa">NFPA 502 Annex B — HRR 5–10 MW</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2930,7 +2900,7 @@ code {
       <div class="field-hint">Sedan, MPV, SUV, mobil penumpang. Kendaraan dominan pada terowongan tol perkotaan</div>
     </div>
 
-    <!-- % HGV -->
+    
     <div class="field" id="field-hgv">
       <div class="field-label">% Kendaraan Berat (HGV / Truk) <span class="field-ref fr-nfpa">NFPA 502 Annex B Tabel B.1 — HRR 30–200 MW</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2943,7 +2913,7 @@ code {
       <div class="field-alert" id="alert-hgv"></div>
     </div>
 
-    <!-- Total indicator -->
+    
     <div class="field" id="field-total-komposisi" style="border:2px solid var(--border);background:var(--surface2)">
       <div class="field-label">Total Komposisi <span class="field-ref fr-nfpa">Harus = 100%</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2956,7 +2926,7 @@ code {
       <div class="field-alert" id="alert-komposisi"></div>
     </div>
 
-    <!-- Design Fire HRR Result -->
+    
     <div class="field" id="field-hrr-result" style="border:2px solid var(--accent2);background:var(--accent2-light)">
       <div class="field-label" style="color:var(--accent2)">Design Fire HRR Estimasi <span class="field-ref fr-nfpa">NFPA 502:2026 Annex B</span></div>
       <div id="f-hrr-display"
@@ -2967,7 +2937,7 @@ code {
     </div>
   </div>
 
-  <!-- % B3 HAZMAT -->
+  
   <div class="form-grid">
     <div class="field" id="field-hazmat">
       <div class="field-label">Persentase Kendaraan Barang Berbahaya <span class="field-ref fr-nfpa">NFPA 502 §7.14, Ch.14</span></div>
@@ -2993,7 +2963,7 @@ code {
     </div>
   </div>
 
-  <!-- hidden selects for backward-compat -->
+  
 
   <div class="nav-buttons">
     <button class="btn btn-secondary" onclick="goToStep(1)"><span>←</span> Kembali</button>
@@ -3001,9 +2971,7 @@ code {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 3 — Lingkungan & Lokasi
-════════════════════════════════════════════════════ -->
+
 <div class="stage" id="stage-3">
   <div class="stage-header">
     <div class="stage-num">Tahap 03 / 05</div>
@@ -3078,7 +3046,7 @@ code {
         <strong>Mengapa penting?</strong> NFPA 502 §7.4.3: Jika ada pemantauan 24 jam oleh operator, CCTV dapat dihitung sebagai salah satu dari dua sarana deteksi kebakaran yang diwajibkan. Ruang Kendali Pusat (di luar negeri disebut OCC — Operations Control Center) adalah pusat pemantauan dan pengendalian seluruh sistem terowongan secara terpusat (CCTV, ventilasi, deteksi kebakaran, traffic control).
       </div>
     </div>
-    <!-- BARU: Keandalan Pasokan Listrik -->
+    
     <div class="field" id="field-listrik">
       <div class="field-label">Keandalan Pasokan Listrik (PLN) <span class="field-ref fr-nfpa">NFPA 502:2026 Ch.12</span></div>
       <select id="f-listrik" onchange="handleListrikChange()">
@@ -3118,9 +3086,7 @@ code {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 4 — Fasilitas Eksisting
-════════════════════════════════════════════════════ -->
+
 <div class="stage" id="stage-4">
   <div class="stage-header">
     <div class="stage-num">Tahap 04 / 05</div>
@@ -3399,9 +3365,7 @@ code {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 5 — Review
-════════════════════════════════════════════════════ -->
+
 <div class="stage" id="stage-5">
   <div class="stage-header">
     <div class="stage-num">Tahap 05 / 05</div>
@@ -3411,11 +3375,11 @@ code {
     </div>
   </div>
 
-  <!-- Category Banner -->
+  
   <div id="review-cat-banner"></div>
 
   <div class="review-grid" id="review-content">
-    <!-- Filled by JS -->
+    
   </div>
 
   <div class="callout callout-ok">
@@ -3429,9 +3393,7 @@ code {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STAGE 6 — OUTPUT
-════════════════════════════════════════════════════ -->
+
 <div class="stage" id="stage-6">
   <div class="stage-header">
     <div class="stage-num">Hasil</div>
@@ -3448,13 +3410,13 @@ code {
     <button class="btn btn-ghost btn-print" onclick="copyShareLink()" style="border-color:var(--accent2);color:var(--accent2)">🔗 Salin Link</button>
   </div>
 
-  <!-- OUTPUT TABS -->
+  
   <div class="out-tab-bar">
     <button class="out-tab active" onclick="switchOutTab('rekomendasi',this)">📋 Rekomendasi</button>
     <button class="out-tab" onclick="switchOutTab('erp',this)">🚨 Rencana Darurat (ERP)</button>
   </div>
 
-  <!-- TAB: REKOMENDASI -->
+  
   <div class="out-tab-panel active" id="outpanel-rekomendasi">
     <div id="out-cat-banner"></div>
     <div class="stat-row" id="out-stats"></div>
@@ -3490,7 +3452,7 @@ code {
         </div>
       </div>
 
-      <!-- GEOMETRI & LINGKUNGAN — auto-link Tahap 1 -->
+      
       <div style="margin:12px 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:0 2px">▸ Geometri &amp; Lingkungan <span style="font-weight:400;text-transform:none;letter-spacing:0">(terisi otomatis dari Tahap 1)</span></div>
       <div class="cv-grid">
 
@@ -3553,7 +3515,7 @@ code {
 
       </div>
 
-      <!-- PARAMETER API D.2.4b/c/d — dengan nilai default -->
+      
       <div style="margin:12px 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:0 2px">▸ Parameter Api — D.2.4b/c/d <span style="font-weight:400;text-transform:none;letter-spacing:0">(default NFPA 502:2026 Table D.2.4a — dapat diubah)</span></div>
       <div class="cv-grid">
 
@@ -3637,7 +3599,7 @@ code {
 
       </div>
 
-      <!-- RESULT PANEL -->
+      
       <div class="cv-result-wrap" id="cv-result-wrap" style="display:none">
         <div class="cv-result-grid">
           <div class="cv-result-main">
@@ -3662,20 +3624,20 @@ code {
           </div>
         </div>
 
-        <!-- Interpretation -->
+        
         <div class="cv-interp" id="cv-interp"></div>
 
-        <!-- HRR Chart (canvas) -->
+        
         <div class="cv-chart-wrap">
           <div class="cv-chart-title">Kurva Vc vs HRR (kondisi geometri saat ini)</div>
           <canvas id="cv-canvas" style="width:100%;display:block"></canvas>
           <div class="cv-chart-axis-x">HRR (MW) →</div>
         </div>
 
-        <!-- Tenability Check -->
+        
         <div class="cv-tenability" id="cv-tenability"></div>
 
-        <!-- Jet Fan Recommendation -->
+        
         <div class="cv-jetfan" id="cv-jetfan"></div>
         <div id="cv-debug" style="padding:6px 10px;font-family:'DM Mono',monospace;color:var(--text-muted)"></div>
       </div>
@@ -3687,7 +3649,7 @@ code {
     </div>
   </div>
 
-  <!-- ── TUNNEL DIAGRAM ─────────────────────────── -->
+  
   <div class="output-section" id="out-diagram-section">
     <div class="output-section-title">🗺 Diagram Skematik Terowongan <span>Posisi fasilitas keselamatan</span></div>
 
@@ -3702,14 +3664,14 @@ code {
     </div>
   </div>
 
-  <!-- Ref Note -->
+  
   <div class="callout callout-info" style="margin-top:24px">
     <span class="callout-icon">📌</span>
     <div class="callout-body"><strong>Catatan Regulasi</strong> Rekomendasi ini bersifat panduan awal berdasarkan NFPA 502:2026, Permen PUPR No. 5/2023, Permen PUPR No. 10/2022, EU Directive 2004/54, dan PIARC Manual. Engineering analysis yang komprehensif harus dilakukan dengan pihak yang berwenang. Persetujuan teknis dari KKJTJ diperlukan untuk terowongan dengan bagian tertutup &gt;200 m (Permen PUPR 10/2022). Rekomendasi dari TERAS digunakan sebagai dasar perhitungan dengan metode <em>performance-based design</em>.</div>
   </div>
-  </div><!-- end outpanel-rekomendasi -->
+  </div>
 
-  <!-- TAB: ERP / RENCANA DARURAT -->
+  
   <div class="out-tab-panel" id="outpanel-erp">
     <div class="erp-header">
       <div class="erp-header-icon">🚨</div>
@@ -3726,11 +3688,11 @@ code {
     </div>
 
     <div id="erp-content"></div>
-  </div><!-- end outpanel-erp -->
+  </div>
 
 
 
-</div><!-- end main-wrap -->
+</div>
 
 <div class="app-footer">
   <span>TERAS v3.0</span>
@@ -4925,7 +4887,7 @@ function buildERP() {
   const icsScale = catGte('C') ? 'Besar' : catGte('B') ? 'Menengah' : 'Kecil';
 
   const html = `
-    <!-- META SUMMARY -->
+
     <div class="erp-meta-grid">
       <div class="erp-meta-card">
         <span class="erp-meta-val">${nama.substring(0,12)}</span>
@@ -4953,7 +4915,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 1: STRUKTUR KOMANDO (ICS) -->
+
     <div class="erp-section open">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">1</div>
@@ -5031,7 +4993,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 2: SKENARIO INSIDEN -->
+
     <div class="erp-section open">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">2</div>
@@ -5055,7 +5017,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 3: TIMELINE RESPONS -->
+
     <div class="erp-section open">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">3</div>
@@ -5107,7 +5069,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 4: CHECKLIST TINDAKAN -->
+
     <div class="erp-section">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">4</div>
@@ -5170,7 +5132,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 5: KONTAK DARURAT -->
+
     <div class="erp-section">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">5</div>
@@ -5195,7 +5157,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 6: KRITERIA EVAKUASI -->
+
     <div class="erp-section">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">6</div>
@@ -5219,7 +5181,7 @@ function buildERP() {
       </div>
     </div>
 
-    <!-- SECTION 7: PASCA INSIDEN -->
+
     <div class="erp-section">
       <div class="erp-section-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="erp-section-num">7</div>
@@ -5585,7 +5547,6 @@ function buildJetFanRec(Vc, A, Q_MW, H) {
 
   // Update diagram setelah data jet fan tersedia
   if (typeof drawDiagram === 'function') drawDiagram();
-}
 }
 
 function drawCVChart(H, A, T_amb, chi, Vc_current, Q_current) {
@@ -6794,7 +6755,6 @@ window.addEventListener('beforeunload', e => {
   }
 });
 
-
 // ══════════════════════════════════════════════
 // AUTOSAVE DRAFT
 // ══════════════════════════════════════════════
@@ -6887,8 +6847,6 @@ function validateStage(n) {
   missing[0].el.scrollIntoView({ behavior:'smooth', block:'center' });
   return false;
 }
-
-
 
 // ══════════════════════════════════════════════
 // SHAREABLE URL (hash-based)
@@ -7099,8 +7057,6 @@ function buildComparePanel() {
       <tbody>${rows}</tbody>
     </table></div>`;
 }
-
-
 
 // ══════════════════════════════════════════════
 // SUPABASE INTEGRATION — TERAS v16
