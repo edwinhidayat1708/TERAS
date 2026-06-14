@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  TERAS v21 — Setup untuk GitHub Pages                   ║
+  ║  TERAS v22 — Setup untuk GitHub Pages                   ║
   ║  Sebelum push ke GitHub, ganti dua baris ini:           ║
   ║                                                          ║
   ║  Cari:  const SUPABASE_URL = 'GANTI_DENGAN_PROJECT_URL' ║
@@ -17,7 +17,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERAS v21 — Decision Support Tool Terowongan Jalan</title>
+<title>TERAS v22 — Decision Support Tool Terowongan Jalan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap">
@@ -3480,36 +3480,36 @@ code {
           Kecepatan minimum aliran udara longitudinal (m/s) yang diperlukan agar asap kebakaran tidak bergerak melawan arah aliran udara (<em>backlayering</em>). Persamaan diperbarui di NFPA 502:2026 via TIA Desember 2025.
         </div>
         <div class="cv-formula-box">
-          <div class="cv-formula-label">Persamaan Dasar (NFPA 502:2026 Annex D.2.4)</div>
-          <div class="cv-formula">V<sub>c</sub> = k · (g · H · Q<sub>c</sub> / ρ · c<sub>p</sub> · T<sub>f</sub> · A)<sup>1/3</sup></div>
-          <div class="cv-formula-note">k = 0.606 (empiris NFPA 502:2026) · g = 9.81 m/s² · ρ = 1.2 kg/m³ (STP) · c<sub>p</sub> = 1.005 kJ/kg·K · T<sub>f</sub> = T<sub>∞</sub> + ΔT<sub>f</sub></div>
+          <div class="cv-formula-label">Persamaan NFPA 502:2026 Annex D.2.4 — Full Equations (via TIA 1862, Nov 2025)</div>
+          <div class="cv-formula" style="font-size:13px;line-height:1.8">
+            U<sub>c</sub> = K<sub>F</sub> · (g·L<sub>n</sub>³/D<sub>h</sub>² · ΔT<sub>p</sub>/(T<sub>a</sub>+ΔT<sub>p</sub>))<sup>½</sup>
+          </div>
+          <div class="cv-formula-note">
+            K<sub>F</sub>=f(W<sub>fire</sub>,L<sub>n</sub>,A) [D.2.4d] · ΔT<sub>p</sub>=f(Q̇,I<sub>fire</sub>,W<sub>fire</sub>,K<sub>L</sub>,ε,U<sub>c</sub>) [D.2.4b] · K<sub>g</sub>=1.0 (grade ~1%, diabaikan) · D<sub>h</sub>=4A/P
+          </div>
         </div>
       </div>
 
-      <!-- INPUT GRID -->
+      <!-- GEOMETRI & LINGKUNGAN — auto-link Tahap 1 -->
+      <div style="margin:12px 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:0 2px">▸ Geometri &amp; Lingkungan <span style="font-weight:400;text-transform:none;letter-spacing:0">(terisi otomatis dari Tahap 1)</span></div>
       <div class="cv-grid">
-        <div class="cv-field">
-          <label class="cv-label">Heat Release Rate (HRR) — Q <span class="cv-ref">NFPA 502 Annex B</span></label>
-          <div class="cv-input-row">
-            <input type="number" id="cv-hrr" class="cv-input" placeholder="mis. 5" min="1" max="300" value="5" oninput="calcCV()">
+
+        <div class="cv-field" style="background:rgba(26,86,196,0.04);border:1.5px solid rgba(26,86,196,0.2);border-radius:var(--radius-sm)">
+          <label class="cv-label" style="color:var(--accent2)">📌 Design Fire HRR Estimasi <span class="cv-ref">Mirror Tahap 02</span></label>
+          <div class="cv-input-row" style="gap:6px">
+            <span id="cv-hrr-mirror" style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--accent2);padding:6px 0">—</span>
             <span class="cv-unit">MW</span>
           </div>
-          <div class="cv-presets">
-            <span class="cv-preset" onclick="setCV('cv-hrr',5)">Sedan 5MW</span>
-            <span class="cv-preset" onclick="setCV('cv-hrr',20)">Bus 20MW</span>
-            <span class="cv-preset" onclick="setCV('cv-hrr',30)">HGV 30MW</span>
-            <span class="cv-preset" onclick="setCV('cv-hrr',100)">HGV Besar 100MW</span>
-            <span class="cv-preset" onclick="setCV('cv-hrr',200)">Tanker 200MW</span>
-          </div>
+          <div class="cv-hint" style="color:var(--accent3)">↑ Otomatis dari kalkulasi komposisi kendaraan Tahap 02. Gunakan nilai ini sebagai input HRR di bawah.</div>
         </div>
 
         <div class="cv-field">
-          <label class="cv-label">Tinggi Efektif Terowongan — H <span class="cv-ref">Annex D</span></label>
+          <label class="cv-label">Tinggi Efektif — H (=L<sub>n</sub>) <span class="cv-ref">Annex D §D.2.4</span></label>
           <div class="cv-input-row">
             <input type="number" id="cv-H" class="cv-input" placeholder="mis. 5.0" min="2" max="12" step="0.1" value="" oninput="calcCV()">
             <span class="cv-unit">m</span>
           </div>
-          <div class="cv-hint" id="cv-H-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Clearance Vertikal (Tahap 1)</div>
+          <div class="cv-hint" id="cv-H-src" style="color:var(--accent3);display:none">↑ Otomatis dari Tinggi Ruang Bebas Efektif (Tahap 1)</div>
           <div class="cv-presets" id="cv-H-presets">
             <span class="cv-preset" onclick="setCV('cv-H',4.5)">4.5m</span>
             <span class="cv-preset" onclick="setCV('cv-H',5.0)">5.0m</span>
@@ -3524,16 +3524,16 @@ code {
             <input type="number" id="cv-A" class="cv-input" placeholder="mis. 50" min="10" max="300" step="0.5" value="" oninput="calcCV()">
             <span class="cv-unit">m²</span>
           </div>
-          <div class="cv-hint" id="cv-A-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Luas Penampang (Tahap 1)</div>
-          <div class="cv-hint" id="cv-A-hint" style="display:none">≈ Lebar efektif × Tinggi efektif</div>
+          <div class="cv-hint" id="cv-A-src" style="color:var(--accent3);display:none">↑ Otomatis dari Luas Penampang Efektif (Tahap 1)</div>
         </div>
 
         <div class="cv-field">
-          <label class="cv-label">Suhu Udara Ambien — T∞ <span class="cv-ref">Annex D</span></label>
+          <label class="cv-label">Suhu Ambien — T<sub>a</sub> <span class="cv-ref">Default 294K (Table D.2.4a)</span></label>
           <div class="cv-input-row">
             <input type="number" id="cv-T" class="cv-input" placeholder="mis. 30" min="0" max="50" value="30" oninput="calcCV()">
             <span class="cv-unit">°C</span>
           </div>
+          <div class="cv-hint" id="cv-T-src" style="color:var(--accent3);display:none">↑ Estimasi dari elevasi lokasi (Tahap 3)</div>
           <div class="cv-presets">
             <span class="cv-preset" onclick="setCV('cv-T',20)">20°C</span>
             <span class="cv-preset" onclick="setCV('cv-T',30)">30°C (tropis)</span>
@@ -3542,27 +3542,99 @@ code {
         </div>
 
         <div class="cv-field">
-          <label class="cv-label">Grade / Kelandaian — θ <span class="cv-ref">Annex D (koreksi grade)</span></label>
+          <label class="cv-label">Grade <span class="cv-ref">NFPA D.2.4: K<sub>g</sub>=1.0 (diabaikan)</span></label>
           <div class="cv-input-row">
-            <input type="number" id="cv-grade" class="cv-input" placeholder="mis. 2.0" min="0" max="7" step="0.5" value="0" oninput="calcCV()">
+            <input type="number" id="cv-grade" class="cv-input" placeholder="0" min="0" max="7" step="0.5" value="0" oninput="calcCV()">
             <span class="cv-unit">%</span>
           </div>
-          <div class="cv-hint" id="cv-grade-src" style="color:var(--accent3);display:none">↑ Diisi otomatis dari Grade / Kelandaian (Tahap 1)</div>
-          <div class="cv-hint">Grade mempengaruhi koreksi buoyancy: +grade naik = bantu ventilasi; −grade turun = lawan ventilasi</div>
+          <div class="cv-hint" id="cv-grade-src" style="color:var(--accent3);display:none">↑ Otomatis dari Grade/Kelandaian (Tahap 1)</div>
+          <div class="cv-hint">NFPA 502:2026 D.2.4: pengaruh grade ~1% → K<sub>g</sub>=1.0, tidak dikoreksi. Tampil sebagai referensi perancang.</div>
+        </div>
+
+      </div>
+
+      <!-- PARAMETER API D.2.4b/c/d — dengan nilai default -->
+      <div style="margin:12px 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:0 2px">▸ Parameter Api — D.2.4b/c/d <span style="font-weight:400;text-transform:none;letter-spacing:0">(default NFPA 502:2026 Table D.2.4a — dapat diubah)</span></div>
+      <div class="cv-grid">
+
+        <div class="cv-field">
+          <label class="cv-label">Total HRR — Q̇ <span class="cv-ref">Annex B · valid &gt;10 MW</span></label>
+          <div class="cv-input-row">
+            <input type="number" id="cv-hrr" class="cv-input" placeholder="mis. 30" min="1" max="300" value="30" oninput="calcCV()">
+            <span class="cv-unit">MW</span>
+          </div>
+          <div class="cv-hint">Gunakan Design Fire HRR dari Tahap 02. Formula D.2.4 valid untuk HRR &gt; 10 MW (simplified), atau HRR apapun (full).</div>
+          <div class="cv-presets">
+            <span class="cv-preset" onclick="setCV('cv-hrr',10)">Bus 10</span>
+            <span class="cv-preset" onclick="setCV('cv-hrr',20)">Bus 20</span>
+            <span class="cv-preset" onclick="setCV('cv-hrr',30)">HGV 30</span>
+            <span class="cv-preset" onclick="setCV('cv-hrr',100)">HGV 100</span>
+            <span class="cv-preset" onclick="setCV('cv-hrr',200)">Tanker 200</span>
+          </div>
         </div>
 
         <div class="cv-field">
-          <label class="cv-label">Fraksi Konvektif HRR — χ <span class="cv-ref">Annex D</span></label>
+          <label class="cv-label">Lebar Api — W<sub>fire</sub> <span class="cv-ref">Default 2.5m (Table D.2.4a)</span></label>
           <div class="cv-input-row">
-            <input type="number" id="cv-chi" class="cv-input" placeholder="mis. 0.7" min="0.5" max="1.0" step="0.05" value="0.7" oninput="calcCV()">
-            <span class="cv-unit">—</span>
+            <input type="number" id="cv-wfire" class="cv-input" placeholder="2.5" min="1" max="10" step="0.1" value="2.5" oninput="calcCV()">
+            <span class="cv-unit">m</span>
           </div>
+          <div class="cv-hint">Default 2,5 m = lebar tipikal satu kendaraan (NFPA 502 Table D.2.4a). HGV/bus: 2,5–3,5 m. Pool fire besar: lebar kolam aktual.</div>
           <div class="cv-presets">
-            <span class="cv-preset" onclick="setCV('cv-chi',0.6)">0.6 (pool fire)</span>
-            <span class="cv-preset" onclick="setCV('cv-chi',0.7)">0.7 (kendaraan)</span>
-            <span class="cv-preset" onclick="setCV('cv-chi',0.8)">0.8 (kayu/padat)</span>
+            <span class="cv-preset" onclick="setCV('cv-wfire',2.5)">2.5 (default)</span>
+            <span class="cv-preset" onclick="setCV('cv-wfire',3.5)">3.5 (HGV)</span>
+            <span class="cv-preset" onclick="setCV('cv-wfire',3.66)">3.66 (Memorial)</span>
           </div>
         </div>
+
+        <div class="cv-field">
+          <label class="cv-label">Intensitas Api — I<sub>fire</sub> <span class="cv-ref">Default 2.25 MW/m² (Table D.2.4a)</span></label>
+          <div class="cv-input-row">
+            <input type="number" id="cv-ifire" class="cv-input" placeholder="2.25" min="0.5" max="10" step="0.05" value="2.25" oninput="calcCV()">
+            <span class="cv-unit">MW/m²</span>
+          </div>
+          <div class="cv-hint">Default 2,25 MW/m² = diesel no.2 (NFPA 502 Table D.2.4a). Representatif untuk kendaraan umum. Gasoline ≈ 2,5 MW/m².</div>
+          <div class="cv-presets">
+            <span class="cv-preset" onclick="setCV('cv-ifire',2.25)">2.25 (diesel)</span>
+            <span class="cv-preset" onclick="setCV('cv-ifire',2.5)">2.5 (gasoline)</span>
+          </div>
+        </div>
+
+        <div class="cv-field">
+          <label class="cv-label">Fraksi Radiasi — ε <span class="cv-ref">Default 0.2 (Table D.2.4a)</span></label>
+          <div class="cv-input-row">
+            <input type="number" id="cv-eps" class="cv-input" placeholder="0.2" min="0.1" max="0.5" step="0.05" value="0.2" oninput="calcCV()">
+            <span class="cv-unit">—</span>
+          </div>
+          <div class="cv-hint">Fraksi HRR yang hilang sebagai radiasi thermal (non-konvektif). Default 0,2 (NFPA 502 Table D.2.4a). Gasoline/pool fire besar ≈ 0,35.</div>
+          <div class="cv-presets">
+            <span class="cv-preset" onclick="setCV('cv-eps',0.2)">0.2 (diesel)</span>
+            <span class="cv-preset" onclick="setCV('cv-eps',0.35)">0.35 (gasoline)</span>
+          </div>
+        </div>
+
+        <div class="cv-field">
+          <label class="cv-label">Densitas Udara — ρ<sub>a</sub> <span class="cv-ref">Default 1.2 kg/m³ (Table D.2.4a)</span></label>
+          <div class="cv-input-row">
+            <input type="number" id="cv-rho" class="cv-input" placeholder="1.2" min="0.9" max="1.3" step="0.005" value="1.2" oninput="calcCV()">
+            <span class="cv-unit">kg/m³</span>
+          </div>
+          <div class="cv-hint">Default 1,2 kg/m³ (NFPA 502 Table D.2.4a, ≈20°C STP). T=30°C tropis → 1,165 kg/m³. Perbedaan kecil, tidak signifikan untuk estimasi awal.</div>
+          <div class="cv-presets">
+            <span class="cv-preset" onclick="setCV('cv-rho',1.2)">1.2 (20°C)</span>
+            <span class="cv-preset" onclick="setCV('cv-rho',1.165)">1.165 (30°C)</span>
+          </div>
+        </div>
+
+        <div class="cv-field">
+          <label class="cv-label">Cp Udara <span class="cv-ref">Default 1007 J/kg·K (Table D.2.4a)</span></label>
+          <div class="cv-input-row">
+            <input type="number" id="cv-cp" class="cv-input" placeholder="1007" min="900" max="1100" step="1" value="1007" oninput="calcCV()">
+            <span class="cv-unit">J/kg·K</span>
+          </div>
+          <div class="cv-hint">Default 1007 J/kg·K (NFPA 502 Table D.2.4a). Deviasi signifikan hanya untuk Q &gt; 100 MW (Tf &gt; 1000 K) — dapat diabaikan pada kondisi desain normal.</div>
+        </div>
+
       </div>
 
       <!-- RESULT PANEL -->
@@ -3605,6 +3677,7 @@ code {
 
         <!-- Jet Fan Recommendation -->
         <div class="cv-jetfan" id="cv-jetfan"></div>
+        <div id="cv-debug" style="padding:6px 10px;font-family:'DM Mono',monospace;color:var(--text-muted)"></div>
       </div>
 
       <div class="cv-empty" id="cv-empty">
@@ -3821,6 +3894,8 @@ function handleGradeChange() {
   };
   if (alerts[v]) { a.className = 'field-alert ' + alerts[v].cls; a.textContent = alerts[v].txt; }
   else { a.className = 'field-alert'; }
+  // Sync langsung ke kalkulator Critical Velocity
+  syncCVFromTahap1();
 }
 
 // ══════════════════════════════════════════════
@@ -3873,6 +3948,12 @@ function handleKomposisiChange() {
     else if (hgv >= 5 || bus >= 10) { hrrLabel = `15–50 MW (campuran/bus) → evaluasi FFFS · ~${hrrWeighted.toFixed(0)} MW`; hrrColor = '#7a5c00'; }
     else                   { hrrLabel = `5–15 MW (kendaraan ringan) · ~${hrrWeighted.toFixed(0)} MW`; hrrColor = 'var(--accent3)'; }
     saveField('hrr_estimasi', hrrWeighted.toFixed(0));
+    // Mirror ke kalkulator Critical Velocity
+    const mirEl = document.getElementById('cv-hrr-mirror');
+    if (mirEl) mirEl.textContent = hrrWeighted.toFixed(0);
+    // Jika cv-hrr belum diubah user secara manual, update otomatis
+    const cvHrrEl = document.getElementById('cv-hrr');
+    if (cvHrrEl && !cvHrrEl._userEdited) cvHrrEl.value = hrrWeighted.toFixed(0);
   }
   const hrrEl = document.getElementById('f-hrr-display');
   if (hrrEl) { hrrEl.textContent = hrrLabel; hrrEl.style.color = hrrColor; hrrEl.style.fontSize = '12px'; }
@@ -5223,126 +5304,199 @@ function setCV(id, val) {
 }
 
 function autoFillCV() {
-  // H — langsung link dari clearance Tahap 1, default 5.0
+  // ── H: dari clearance Tahap 1 ──────────────────────
   const H = parseFloat(D.clearance) || 5.0;
   const hEl = document.getElementById('cv-H');
-  hEl.value = H;
-  const hSrc = document.getElementById('cv-H-src');
-  const hPre = document.getElementById('cv-H-presets');
-  if (D.clearance) {
-    if (hSrc) hSrc.style.display = 'block';
-    if (hPre) hPre.style.display = 'none';
+  if (hEl) {
+    hEl.value = H;
+    const hSrc = document.getElementById('cv-H-src');
+    const hPre = document.getElementById('cv-H-presets');
+    if (D.clearance) {
+      if (hSrc) hSrc.style.display = 'block';
+      if (hPre) hPre.style.display = 'none';
+    }
   }
 
-  // A — langsung link dari luas_penampang Tahap 1, fallback hitung dari dimensi, default 35
+  // ── A: dari luas_penampang Tahap 1 ─────────────────
   const lajur = parseInt(D.lajur) || 2;
   const lebar = parseFloat(D.lebar_lajur) || 3.5;
   const A = parseFloat(D.luas_penampang) || Math.round(lajur * lebar * H * 10) / 10 || 35;
   const aEl = document.getElementById('cv-A');
-  aEl.value = A;
-  const aSrc = document.getElementById('cv-A-src');
-  if (D.luas_penampang || D.lebar_lajur) {
-    if (aSrc) aSrc.style.display = 'block';
+  if (aEl) {
+    aEl.value = A;
+    const aSrc = document.getElementById('cv-A-src');
+    if (D.luas_penampang || D.lebar_lajur) {
+      if (aSrc) aSrc.style.display = 'block';
+    }
   }
 
-  // Grade — dari grade Tahap 1, default 0
+  // ── Grade: dari grade Tahap 1 ───────────────────────
   const gradeMap = { '0_1': 0.5, '1_2': 1.5, '2_3': 2.5, '3_5': 4.0, 'gt5': 5.5 };
   const grade = D.grade ? (gradeMap[D.grade] || 0) : 0;
   const gEl = document.getElementById('cv-grade');
-  gEl.value = grade;
-  const gSrc = document.getElementById('cv-grade-src');
-  if (D.grade) {
-    if (gSrc) gSrc.style.display = 'block';
+  if (gEl) {
+    gEl.value = grade;
+    const gSrc = document.getElementById('cv-grade-src');
+    if (D.grade && gSrc) gSrc.style.display = 'block';
   }
 
-  // T — dari elevasi, default 30°C (tropis)
+  // ── T_amb: dari elevasi Tahap 3 ────────────────────
   const elevasiMap = { 'rendah': 30, 'sedang': 26, 'tinggi': 20, 'sangat_tinggi': 15 };
   const T_amb = elevasiMap[D.elevasi] || 30;
-  document.getElementById('cv-T').value = T_amb;
+  const tEl = document.getElementById('cv-T');
+  if (tEl) {
+    tEl.value = T_amb;
+    const tSrc = document.getElementById('cv-T-src');
+    if (D.elevasi && tSrc) tSrc.style.display = 'block';
+  }
 
-  // HRR — default 5 MW (sedan) jika belum diisi
-  const hrrEl = document.getElementById('cv-hrr');
-  if (!hrrEl.value) hrrEl.value = 5;
-
-  // chi — default 0.7 (kendaraan) jika belum diisi
-  const chiEl = document.getElementById('cv-chi');
-  if (!chiEl.value) chiEl.value = 0.7;
+  // ── HRR mirror dari Tahap 02 ────────────────────────
+  const mirrorEl = document.getElementById('cv-hrr-mirror');
+  if (mirrorEl) {
+    const hrrEst = parseFloat(D.hrr_estimasi);
+    if (hrrEst > 0) {
+      mirrorEl.textContent = hrrEst.toFixed(0);
+      // Jika cv-hrr belum diubah manual, sarankan nilai ini
+      const hrrEl = document.getElementById('cv-hrr');
+      if (hrrEl && (!hrrEl._userEdited)) hrrEl.value = hrrEst.toFixed(0);
+    } else {
+      mirrorEl.textContent = '— (isi Tahap 02)';
+    }
+  }
 
   calcCV();
 }
 
-function calcCV() {
-  const Q_total = parseFloat(document.getElementById('cv-hrr').value);
-  const H = parseFloat(document.getElementById('cv-H').value);
-  const A = parseFloat(document.getElementById('cv-A').value);
-  const T_amb = parseFloat(document.getElementById('cv-T').value) || 30;
-  const grade_pct = parseFloat(document.getElementById('cv-grade').value) || 0;
-  const chi = parseFloat(document.getElementById('cv-chi').value) || 0.7;
+// Tandai cv-hrr sebagai user-edited jika diubah manual
+document.addEventListener('DOMContentLoaded', function() {
+  const hrrEl = document.getElementById('cv-hrr');
+  if (hrrEl) hrrEl.addEventListener('input', function() { this._userEdited = true; });
+});
 
-  const wrap = document.getElementById('cv-result-wrap');
+// ── Sync langsung dari Tahap 1 saat nilai berubah ──────
+function syncCVFromTahap1() {
+  const H = parseFloat(D.clearance);
+  const hEl = document.getElementById('cv-H');
+  if (hEl && H > 0) {
+    hEl.value = H;
+    const hSrc = document.getElementById('cv-H-src');
+    const hPre = document.getElementById('cv-H-presets');
+    if (hSrc) hSrc.style.display = 'block';
+    if (hPre) hPre.style.display = 'none';
+  }
+  const A = parseFloat(D.luas_penampang);
+  const aEl = document.getElementById('cv-A');
+  if (aEl && A > 0) {
+    aEl.value = A;
+    const aSrc = document.getElementById('cv-A-src');
+    if (aSrc) aSrc.style.display = 'block';
+  }
+  const gradeMap = { '0_1': 0.5, '1_2': 1.5, '2_3': 2.5, '3_5': 4.0, 'gt5': 5.5 };
+  const grade = D.grade ? (gradeMap[D.grade] || 0) : 0;
+  const gEl = document.getElementById('cv-grade');
+  if (gEl) {
+    gEl.value = grade;
+    const gSrc = document.getElementById('cv-grade-src');
+    if (D.grade && gSrc) gSrc.style.display = 'block';
+  }
+  calcCV();
+}
+
+function calcCV() {
+  // ── Baca semua input ─────────────────────────────────
+  const Q_total = parseFloat(document.getElementById('cv-hrr')?.value);
+  const H       = parseFloat(document.getElementById('cv-H')?.value);
+  const A       = parseFloat(document.getElementById('cv-A')?.value);
+  const T_amb   = parseFloat(document.getElementById('cv-T')?.value) || 30;
+  const Wfire   = parseFloat(document.getElementById('cv-wfire')?.value) || 2.5;
+  const Ifire   = (parseFloat(document.getElementById('cv-ifire')?.value) || 2.25) * 1e6; // W/m²
+  const eps     = parseFloat(document.getElementById('cv-eps')?.value) || 0.2;
+  const rho_a   = parseFloat(document.getElementById('cv-rho')?.value) || 1.2;
+  const cp      = parseFloat(document.getElementById('cv-cp')?.value) || 1007;
+
+  const wrap  = document.getElementById('cv-result-wrap');
   const empty = document.getElementById('cv-empty');
 
   if (isNaN(Q_total) || isNaN(H) || isNaN(A) || Q_total <= 0 || H <= 0 || A <= 0) {
     wrap.style.display = 'none'; empty.style.display = 'block'; return;
   }
 
-  const T_amb_K = T_amb + 273.15;
-  const Q_conv = Q_total * 1e6 * chi; // Watts (convective heat release rate)
+  // ── Konstanta ────────────────────────────────────────
+  const g  = 9.81;        // m/s²
+  const Ln = H;           // = tunnel height for pool fire on roadway (NFPA D.2.4)
+  const Ta = T_amb + 273.15; // K
 
-  // NFPA 502:2026 Annex D.2.4 — Critical Velocity formula:
-  // Vc = k × [ g × H × Q_conv / (ρ_amb × cp × T_f × A) ]^(1/3)
-  // where T_f is the plume temperature (K), solved iteratively.
-  //
-  // Iteration: assume initial Vc → compute ΔT = Q_conv/(ρ·cp·A·Vc) → new T_f → new Vc
-  // Converges in 5–10 iterations.
-  const g = 9.81;      // m/s²
-  const rho = 1.2;     // kg/m³ ambient density at ~20°C (conservative)
-  const cp = 1005;     // J/(kg·K)
-  const k = 0.606;     // empirical constant NFPA 502:2026 Annex D
+  // ── Hydraulic diameter Dh = 4A/P ────────────────────
+  // P = 2(W+H); W estimasi dari A dan H
+  const W_tun = A / H;
+  const P = 2 * (W_tun + H);
+  const Dh = 4 * A / P;
 
-  let Vc = 3.0; // initial guess (m/s)
-  for (let i = 0; i < 20; i++) {
-    const deltaT = Q_conv / (rho * cp * A * Vc); // temperature rise (K)
-    const T_f_K = T_amb_K + deltaT;               // plume temperature (K)
-    const Vc_new = k * Math.pow((g * H * Q_conv) / (rho * cp * T_f_K * A), 1 / 3);
-    if (Math.abs(Vc_new - Vc) < 0.001) { Vc = Vc_new; break; }
-    Vc = Vc_new;
+  // ── Q̇ total (W) ─────────────────────────────────────
+  const Q_dot = Q_total * 1e6; // W
+
+  // ── KL [D.2.4c] ─────────────────────────────────────
+  // KL = 1.83 × (0.95 + exp(−Q̇ / (2.2·Ln·Ifire·Wfire)))^(−1)
+  const KL = 1.83 * Math.pow(0.95 + Math.exp(-Q_dot / (2.2 * Ln * Ifire * Wfire)), -1);
+
+  // ── KF [D.2.4d] ─────────────────────────────────────
+  // KF = 1.0556 × [1 − min(1, Wfire·Ln/A)] + 0.42
+  const KF = 1.0556 * (1 - Math.min(1, (Wfire * Ln) / A)) + 0.42;
+
+  // ── Iterasi Uc & ΔTp [D.2.4a + D.2.4b] ─────────────
+  // ΔTp = min(Q̇, 0.176·Ifire·Wfire·Ln·KL)·(1−ε) / (min[A, Ln(Wfire+0.35Ln)] · Uc · ρa · cp)
+  // Uc  = KF × sqrt(g·Ln³/Dh² · ΔTp/(Ta+ΔTp))
+  const Q_conv_num = Math.min(Q_dot, 0.176 * Ifire * Wfire * Ln * KL) * (1 - eps);
+  const A_eff = Math.min(A, Ln * (Wfire + 0.35 * Ln));
+
+  let Uc = 2.0; // tebakan awal (m/s)
+  let dTp = 0;
+  for (let i = 0; i < 50; i++) {
+    dTp = Q_conv_num / (A_eff * Uc * rho_a * cp);
+    const Uc_new = KF * Math.sqrt((g * Math.pow(Ln, 3) / (Dh * Dh)) * (dTp / (Ta + dTp)));
+    if (Math.abs(Uc_new - Uc) < 0.0005) { Uc = Uc_new; break; }
+    Uc = Uc_new;
   }
+  const T_f_final = T_amb + dTp; // °C
 
-  // Final temperature values for display
-  const deltaT_final = Q_conv / (rho * cp * A * Vc);
-  const T_f_final = T_amb + deltaT_final;
-
-  // Display results
-  wrap.style.display = 'block';
-  empty.style.display = 'none';
-
-  document.getElementById('cv-vc').textContent = Vc.toFixed(2);
-  document.getElementById('cv-vc-kmh').textContent = (Vc * 3.6).toFixed(1);
-  document.getElementById('cv-dt').textContent = Math.round(deltaT_final) + '°';
+  // ── Tampilkan hasil ──────────────────────────────────
+  wrap.style.display = 'block'; empty.style.display = 'none';
+  document.getElementById('cv-vc').textContent = Uc.toFixed(2);
+  document.getElementById('cv-vc-kmh').textContent = (Uc * 3.6).toFixed(1);
+  document.getElementById('cv-dt').textContent = Math.round(dTp) + '°';
   document.getElementById('cv-tf').textContent = Math.round(T_f_final) + '°';
 
-  // Interpretation
+  // ── Interpretasi ─────────────────────────────────────
   const interp = document.getElementById('cv-interp');
-  if (Vc < 2.5) {
+  const gradeNote = parseFloat(document.getElementById('cv-grade')?.value || 0) >= 3
+    ? ' Grade ≥3%: meski K<sub>g</sub>=1.0 (diabaikan NFPA D.2.4), pertimbangkan analisis buoyancy tambahan.'
+    : '';
+  if (Uc < 2.5) {
     interp.className = 'cv-interp cv-interp-ok';
-    interp.innerHTML = `<strong>✅ Vc = ${Vc.toFixed(2)} m/s — Relatif Rendah</strong>Kecepatan kritis dapat dicapai dengan sistem ventilasi longitudinal standar. Jet fans dengan kapasitas normal kemungkinan mencukupi. Ventilasi alami mungkin memadai untuk Cat. X/A dengan kondisi angin mendukung.`;
-  } else if (Vc < 4.0) {
+    interp.innerHTML = `<strong>✅ U<sub>c</sub> = ${Uc.toFixed(2)} m/s — Relatif Rendah</strong>Kecepatan kritis dapat dicapai dengan sistem ventilasi longitudinal standar. Jet fan dengan kapasitas normal kemungkinan mencukupi. Verifikasi CFD 3D direkomendasikan sebelum desain final.${gradeNote}`;
+  } else if (Uc < 4.0) {
     interp.className = 'cv-interp cv-interp-warn';
-    interp.innerHTML = `<strong>⚠ Vc = ${Vc.toFixed(2)} m/s — Sedang</strong>Memerlukan sistem ventilasi mekanis yang memadai. Jet fans harus dirancang spesifik untuk mencapai Vc ini. Lakukan verifikasi dengan CFD 3D (direkomendasikan NFPA 502:2026). Grade ${grade_pct}% ${grade_pct >= 3 ? 'membutuhkan analisis tambahan' : 'masih aman'}.`;
+    interp.innerHTML = `<strong>⚠ U<sub>c</sub> = ${Uc.toFixed(2)} m/s — Sedang</strong>Memerlukan sistem ventilasi mekanis yang memadai. Jet fan harus dirancang spesifik untuk mencapai U<sub>c</sub> ini. Verifikasi CFD 3D wajib (NFPA 502:2026 Annex D §D.3).${gradeNote}`;
   } else {
     interp.className = 'cv-interp cv-interp-danger';
-    interp.innerHTML = `<strong>⛔ Vc = ${Vc.toFixed(2)} m/s — Tinggi / Sangat Menuntut</strong>Kecepatan kritis sangat tinggi — HRR desain sangat besar (${Q_total} MW). Sistem ventilasi longitudinal mungkin tidak cukup sendiri. Pertimbangkan: (1) FFFS untuk menekan HRR, (2) Ventilasi transverse/semi-transverse, (3) Pembatasan jenis kendaraan masuk. Verifikasi CFD 3D wajib.`;
+    interp.innerHTML = `<strong>⛔ U<sub>c</sub> = ${Uc.toFixed(2)} m/s — Tinggi / Sangat Menuntut</strong>HRR desain sangat besar (${Q_total} MW). Ventilasi longitudinal mungkin tidak cukup sendiri. Pertimbangkan: (1) FFFS untuk menekan HRR efektif, (2) Ventilasi transverse/semi-transverse, (3) Pembatasan jenis kendaraan. CFD 3D wajib.${gradeNote}`;
   }
 
-  // Tenability check
-  buildTenabilityCheck(Q_total, T_f_final, Vc, A);
+  // ── Parameter intermediet untuk display ──────────────
+  const debugEl = document.getElementById('cv-debug');
+  if (debugEl) {
+    debugEl.innerHTML = `<span style="opacity:.6;font-size:10px">
+      D<sub>h</sub>=${Dh.toFixed(2)}m · W<sub>tun</sub>=${W_tun.toFixed(1)}m · K<sub>L</sub>=${KL.toFixed(3)} · K<sub>F</sub>=${KF.toFixed(3)} ·
+      Q_conv_num=${(Q_conv_num/1e6).toFixed(2)}MW · A_eff=${A_eff.toFixed(1)}m²
+    </span>`;
+  }
 
-  // Jet fan recommendation
-  buildJetFanRec(Vc, A, Q_total);
+  // ── Tenability & Jet Fan ─────────────────────────────
+  buildTenabilityCheck(Q_total, T_f_final, Uc, A);
+  buildJetFanRec(Uc, A, Q_total, H);
 
-  // Draw chart
-  drawCVChart(H, A, T_amb, chi, Vc, Q_total);
+  // ── Chart ────────────────────────────────────────────
+  drawCVChart(H, A, T_amb, 0.8, Uc, Q_total);
 }
 
 function buildTenabilityCheck(Q_MW, T_f, Vc, A) {
@@ -5368,30 +5522,70 @@ function buildTenabilityCheck(Q_MW, T_f, Vc, A) {
     <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-style:italic">⚠ Analisis tenabilitas ini bersifat estimasi kasar. Gunakan CFD 3D untuk verifikasi (NFPA 502:2026 Annex D). Batas radiasi 1.7 kW/m² direvisi dari 2.5 kW/m² di edisi 2026.</div>`;
 }
 
-function buildJetFanRec(Vc, A, Q_MW) {
+function buildJetFanRec(Vc, A, Q_MW, H) {
   const el = document.getElementById('cv-jetfan');
-  // Thrust jet fan tipikal berdasarkan kapasitas motor:
-  //   ~300–400 N : jet fan kecil (15–22 kW, reversible)
-  //   ~450 N     : jet fan menengah (30 kW, tipikal terowongan 2-lajur)
-  //   ~700 N     : jet fan besar (45 kW, terowongan perkotaan/highway lebar)
-  //   ~1000 N+   : jet fan heavy-duty (>60 kW)
-  // Default konservatif: 450 N (30 kW) untuk estimasi awal.
-  // Gunakan spesifikasi thrust aktual vendor untuk desain final.
-  const jfThrust = 450; // N (30 kW jet fan, tipikal terowongan 2-lajur)
-  const rho = 1.2;
-  // Momentum approach: n_fans ≈ (ρ × A × Vc² × F_loss) / thrust_per_fan
-  // F_loss factor ~1.5 untuk obstruksi standar (kendaraan, dinding) + tambahan untuk HRR besar
-  const F_loss = 1.5 + (Q_MW / 100) * 0.5;
-  const nFans = Math.ceil((rho * A * Vc * Vc * F_loss) / jfThrust);
-  const nFans700 = Math.ceil((rho * A * Vc * Vc * F_loss) / 700); // juga tampilkan untuk 700N
-  const interval = D.panjang_m ? (parseFloat(D.panjang_m) / nFans).toFixed(0) : '—';
+  if (!el) return;
 
-  el.innerHTML = `<strong>💨 Estimasi Kebutuhan Jet Fan (Ventilasi Longitudinal)</strong>
-    Debit udara yang dibutuhkan: <strong>${(Vc * A).toFixed(1)} m³/s</strong> pada Vc = ${Vc.toFixed(2)} m/s<br>
-    Estimasi jumlah jet fan dengan thrust 450 N/unit (~30 kW), faktor hambatan ${F_loss.toFixed(1)}×: <strong>~${nFans} unit</strong><br>
-    Perbandingan dengan thrust 700 N/unit (~45 kW): <strong>~${nFans700} unit</strong><br>
-    Interval antar fan (panjang ${D.panjang_m || '—'} m, asumsi 450N): <strong>~${interval} m</strong><br>
-    <span style="font-size:11px;opacity:0.8">⚠ Thrust 450 N (30 kW) adalah asumsi konservatif untuk estimasi awal. Jet fan 45 kW ≈ 700 N, jet fan &gt;60 kW ≈ 1000 N. Desain final wajib menggunakan spesifikasi thrust aktual dari vendor dan diverifikasi melalui simulasi/CFD (NFPA 502:2026 Annex D). Untuk grade &gt; 3%, analisis koreksi buoyancy tersendiri diperlukan.</span>`;
+  const rho = parseFloat(document.getElementById('cv-rho')?.value) || 1.2;
+  // F_loss: faktor hambatan ~1.5 (obstruksi standar) + koreksi HRR besar
+  const F_loss = 1.5 + (Q_MW / 100) * 0.5;
+
+  // Estimasi jumlah dengan dua ukuran fan tipikal
+  const nFans450 = Math.ceil((rho * A * Vc * Vc * F_loss) / 450);
+  const nFans700 = Math.ceil((rho * A * Vc * Vc * F_loss) / 700);
+  const nFinal = Math.max(nFans450, 1); // minimum 1 dari kalkulasi
+
+  // Desain dengan redundansi N+1
+  const nDesign = Math.max(nFinal + 1, 2); // minimal 2 unit (redundansi)
+
+  // Interval ideal antar fan
+  const L = D.panjang_m ? parseFloat(D.panjang_m) : null;
+  const interval450 = L ? Math.round(L / nDesign) : null;
+
+  // Posisi jet fan pertama dari portal inlet
+  // Aturan praktis: 1/4 interval pertama dari portal, atau min 50m
+  // Reference: PIARC + praktik desain terowongan jalan
+  const jfFirstPos = L ? Math.max(50, Math.round(interval450 / 4)) : null;
+
+  // Simpan untuk dipakai di diagram
+  window._jfData = {
+    nDesign, interval: interval450, firstPos: jfFirstPos, L
+  };
+
+  const redundancyNote = nFinal <= 1
+    ? `<div style="margin:6px 0;padding:6px 10px;background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;border-radius:0 4px 4px 0;font-size:11px">
+        ⚠ <strong>Hasil kalkulasi = ${nFinal} unit.</strong> Sistem ventilasi terowongan selalu dirancang redundant (N+1).
+        Rekomendasi desain minimum: <strong>2 unit</strong> — 1 unit operasi normal + 1 unit cadangan (standby).
+        Ini juga memastikan ada kapasitas saat salah satu jet fan dalam perawatan.
+      </div>`
+    : `<div style="margin:6px 0;padding:6px 10px;background:rgba(245,158,11,0.07);border-left:3px solid #f59e0b;border-radius:0 4px 4px 0;font-size:11px">
+        ℹ Tambahkan 1 unit cadangan (N+1 redundansi): desain final = <strong>${nFinal + 1} unit</strong>.
+      </div>`;
+
+  const positionInfo = (L && jfFirstPos)
+    ? `<div style="margin:6px 0;padding:6px 10px;background:rgba(16,185,129,0.07);border-left:3px solid #10b981;border-radius:0 4px 4px 0;font-size:11px">
+        📍 <strong>Posisi jet fan pertama</strong> dari inlet portal: <strong>~${jfFirstPos} m</strong><br>
+        Selanjutnya setiap ~${interval450} m · Total panjang: ${L} m · Jumlah desain: ${nDesign} unit<br>
+        <span style="opacity:.7">Catatan: posisi pertama ditempatkan cukup jauh dari portal agar tidak mengganggu aliran masuk udara segar, tetapi cukup dekat untuk memberikan momentum awal. Verifikasi dengan CFD.</span>
+      </div>`
+    : `<div style="font-size:11px;opacity:.7;margin-top:4px">↑ Isi Panjang Terowongan di Tahap 1 untuk menghitung posisi pemasangan.</div>`;
+
+  el.innerHTML = `
+    <strong style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-family:'DM Mono',monospace">💨 Estimasi Kebutuhan Jet Fan (Ventilasi Longitudinal)</strong>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:6px">
+      <tr><td style="padding:3px 0;color:var(--text-muted)">Debit udara dibutuhkan (Q = Uc·A)</td><td style="font-family:'DM Mono',monospace;font-weight:700;text-align:right"><strong>${(Vc * A).toFixed(1)} m³/s</strong></td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted)">Faktor hambatan (F_loss)</td><td style="font-family:'DM Mono',monospace;text-align:right">${F_loss.toFixed(2)}×</td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted)">Kalkulasi — thrust 450N (~30kW)</td><td style="font-family:'DM Mono',monospace;text-align:right"><strong>~${nFans450} unit</strong></td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted)">Kalkulasi — thrust 700N (~45kW)</td><td style="font-family:'DM Mono',monospace;text-align:right">~${nFans700} unit</td></tr>
+      <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0 3px;font-weight:600">Rekomendasi desain (N+1 redundansi)</td><td style="font-family:'DM Mono',monospace;font-weight:700;text-align:right;color:var(--accent)"><strong>${nDesign} unit</strong></td></tr>
+    </table>
+    ${redundancyNote}
+    ${positionInfo}
+    <div style="font-size:10px;opacity:.65;margin-top:6px;font-style:italic">⚠ Estimasi awal berbasis pendekatan momentum. Desain final wajib menggunakan spesifikasi thrust aktual vendor dan diverifikasi melalui CFD 3D (NFPA 502:2026 Annex D §D.3). Thrust 450N = 30kW; 700N = 45kW — konfirmasi dengan vendor aktual.</div>`;
+
+  // Update diagram setelah data jet fan tersedia
+  if (typeof drawDiagram === 'function') drawDiagram();
+}
 }
 
 function drawCVChart(H, A, T_amb, chi, Vc_current, Q_current) {
@@ -5793,15 +5987,24 @@ function drawLongitudinal(ctx, W, H) {
   // Sensor CO — every 100m
   for (let pos = 50; pos < m; pos += 100) placeItem(pos, -32, COLORS.SENSOR, 'S', 'CO', 10);
 
-  // Jet fans (if ventilation) — every 250m center ceiling
+  // Jet fans — posisi dari kalkulasi buildJetFanRec, fallback setiap 250m
   if (['longitudinal','transverse','semi_trans'].includes(D.vent) || catGte('B')) {
-    for (let pos = 125; pos < m; pos += 250) {
+    const jfData = window._jfData;
+    const jfPositions = [];
+    if (jfData && jfData.firstPos && jfData.interval && jfData.L) {
+      for (let pos = jfData.firstPos; pos < m; pos += jfData.interval) {
+        jfPositions.push(pos);
+      }
+    } else {
+      for (let pos = 125; pos < m; pos += 250) jfPositions.push(pos);
+    }
+
+    jfPositions.forEach((pos, idx) => {
       const x = PAD + pos * scale;
       ctx.shadowColor = COLORS.JET_FAN;
       ctx.shadowBlur = 10;
       ctx.fillStyle = COLORS.JET_FAN;
       ctx.beginPath();
-      // Jet fan as diamond
       ctx.save();
       ctx.translate(x, tube1Y - 22);
       ctx.rotate(Math.PI / 4);
@@ -5811,8 +6014,26 @@ function drawLongitudinal(ctx, W, H) {
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.font = '8px DM Mono, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('JF', x, tube1Y - 19);
-    }
+      ctx.fillText(`JF${idx + 1}`, x, tube1Y - 19);
+
+      // Garis posisi dari portal untuk JF pertama
+      if (idx === 0 && jfData && jfData.firstPos) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(16,185,129,0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(PAD, tube1Y - 14);
+        ctx.lineTo(x, tube1Y - 14);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(16,185,129,0.8)';
+        ctx.font = 'bold 7px DM Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${jfData.firstPos}m dari portal`, PAD + (x - PAD) / 2, tube1Y - 17);
+        ctx.restore();
+      }
+    });
   }
 
   // Cross-passages (twin tube only)
