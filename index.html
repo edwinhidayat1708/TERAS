@@ -3658,8 +3658,34 @@ code {
         <div class="diagram-ctrl-label">Tampilan:</div>
         <button class="diagram-view-btn active" onclick="setDiagramView('longitudinal',this)">Tampak Atas / Denah</button>
         <button class="diagram-view-btn" onclick="setDiagramView('cross',this)">Potongan Melintang</button>
+        <button class="diagram-view-btn" onclick="setDiagramView('longitudinal_section',this)">Potongan Memanjang</button>
       </div>
-      <canvas id="diagram-canvas" style="width:100%;display:block;border-radius:0 0 var(--radius) var(--radius)"></canvas>
+
+      <!-- Fire scenario controls — visible only for cross & longitudinal_section -->
+      <div id="fire-scenario-controls" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;">🔥 Skenario Kebakaran:</span>
+          <select id="fire-hrr-select" onchange="onFireScenarioChange()" style="font-size:12px;padding:5px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer;">
+            <option value="5"  data-label="Mobil Penumpang">🚗 Mobil Penumpang — 5 MW</option>
+            <option value="15" data-label="Mobil Sedang / Van">🚐 Mobil Sedang / Van — 15 MW</option>
+            <option value="30" data-label="Bus" selected>🚌 Bus — 30 MW</option>
+            <option value="70" data-label="Truk Berat">🚛 Truk Berat — 70 MW</option>
+            <option value="100" data-label="HGV / Truk Kontainer">🚚 HGV / Truk Kontainer — 100 MW</option>
+            <option value="200" data-label="Tanker B3">⛽ Tanker B3 / Hazmat — 200 MW</option>
+          </select>
+        </div>
+        <div id="longitudinal-section-controls" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;">📍 Posisi Kebakaran:</span>
+          <input type="range" id="fire-pos-slider" min="0" max="100" value="33" step="1" oninput="onFireScenarioChange()" style="width:120px;accent-color:var(--accent);">
+          <span id="fire-pos-label" style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-muted);min-width:60px;">33%</span>
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-left:8px;">💨 Kecepatan Kritis (Vc):</span>
+          <input type="range" id="vc-slider" min="0" max="10" value="0" step="0.5" oninput="onVcSliderChange()" style="width:130px;accent-color:#10b981;">
+          <span id="vc-slider-label" style="font-size:12px;font-family:'DM Mono',monospace;color:#10b981;font-weight:700;min-width:60px;">0.0 m/s</span>
+          <button onclick="toggleVentAnimation()" id="vent-anim-btn" style="font-size:11px;padding:4px 10px;border:1.5px solid #10b981;border-radius:var(--radius-sm);background:transparent;color:#10b981;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">▶ Aktifkan Ventilasi</button>
+        </div>
+      </div>
+
+      <canvas id="diagram-canvas" style="width:100%;display:block;"></canvas>
       <div class="diagram-legend" id="diagram-legend"></div>
     </div>
   </div>
@@ -5723,7 +5749,72 @@ function setDiagramView(view, btn) {
   currentDiagramView = view;
   document.querySelectorAll('.diagram-view-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+
+  const fireCtrl = document.getElementById('fire-scenario-controls');
+  const longCtrl = document.getElementById('longitudinal-section-controls');
+  if (view === 'cross') {
+    fireCtrl.style.display = 'flex';
+    longCtrl.style.display = 'none';
+  } else if (view === 'longitudinal_section') {
+    fireCtrl.style.display = 'flex';
+    longCtrl.style.display = 'flex';
+  } else {
+    fireCtrl.style.display = 'none';
+    longCtrl.style.display = 'none';
+  }
   drawDiagram();
+}
+
+// ── FIRE SCENARIO STATE ──
+let _fireHRR = 30;        // MW
+let _firePosRatio = 0.33; // 0..1 along tunnel
+let _vcCurrent = 0;       // m/s applied ventilation velocity
+let _ventActive = false;  // animated toggle state
+let _ventAnimFrame = null;
+
+function onFireScenarioChange() {
+  _fireHRR = parseFloat(document.getElementById('fire-hrr-select').value) || 30;
+  _firePosRatio = (parseFloat(document.getElementById('fire-pos-slider').value) || 33) / 100;
+  document.getElementById('fire-pos-label').textContent = Math.round(_firePosRatio * 100) + '%';
+  drawDiagram();
+}
+
+function onVcSliderChange() {
+  _vcCurrent = parseFloat(document.getElementById('vc-slider').value) || 0;
+  document.getElementById('vc-slider-label').textContent = _vcCurrent.toFixed(1) + ' m/s';
+  _ventActive = _vcCurrent > 0;
+  document.getElementById('vent-anim-btn').textContent = _vcCurrent > 0 ? '⏸ Matikan Ventilasi' : '▶ Aktifkan Ventilasi';
+  drawDiagram();
+}
+
+function toggleVentAnimation() {
+  _ventActive = !_ventActive;
+  const btn = document.getElementById('vent-anim-btn');
+  if (_ventActive) {
+    // Animate Vc from current to critical (from D or default 2.5)
+    const vcTarget = parseFloat(D.vc_result) || 2.5;
+    _vcCurrent = 0;
+    document.getElementById('vc-slider').value = 0;
+    btn.textContent = '⏸ Matikan Ventilasi';
+    let start = null;
+    function animStep(ts) {
+      if (!start) start = ts;
+      const prog = Math.min((ts - start) / 2000, 1); // 2 sec animation
+      _vcCurrent = prog * vcTarget;
+      document.getElementById('vc-slider').value = _vcCurrent;
+      document.getElementById('vc-slider-label').textContent = _vcCurrent.toFixed(1) + ' m/s';
+      drawDiagram();
+      if (prog < 1 && _ventActive) _ventAnimFrame = requestAnimationFrame(animStep);
+    }
+    _ventAnimFrame = requestAnimationFrame(animStep);
+  } else {
+    if (_ventAnimFrame) cancelAnimationFrame(_ventAnimFrame);
+    _vcCurrent = 0;
+    document.getElementById('vc-slider').value = 0;
+    document.getElementById('vc-slider-label').textContent = '0.0 m/s';
+    btn.textContent = '▶ Aktifkan Ventilasi';
+    drawDiagram();
+  }
 }
 
 function drawDiagram() {
@@ -5741,6 +5832,7 @@ function drawDiagram() {
 
   if (currentDiagramView === 'longitudinal') drawLongitudinal(ctx, displayW, displayH);
   else if (currentDiagramView === 'cross') drawCrossSection(ctx, displayW, displayH);
+  else if (currentDiagramView === 'longitudinal_section') drawLongitudinalSection(ctx, displayW, displayH);
 
   buildLegend();
 }
@@ -6094,7 +6186,7 @@ function drawLongitudinal(ctx, W, H) {
   ctx.fillText('TERAS · Skematik (tidak to scale)', W - 10, H - 8);
 }
 
-// ── CROSS SECTION — REWRITTEN ────────────────
+// ── CROSS SECTION — with smoke layer + fire scenario ────────────────
 function drawCrossSection(ctx, W, H) {
   ctx.clearRect(0, 0, W, H);
   const clearanceMap={'4.5':4.5,'5.0':5.0,'5.5':5.5,'6.0':6.0,'6.5':6.5};
@@ -6114,18 +6206,31 @@ function drawCrossSection(ctx, W, H) {
   const tX=padL+(availW-tW)/2, tY=padT+(availH-tH)/2, fY=tY+tH;
   const archH=tH*0.18, liningT=Math.max(10,sc*0.35);
 
+  // Fire scenario values
+  const hrr = _fireHRR || 30;
+  const vcApp = _vcCurrent || 0;
+  const vcCrit = parseFloat(D.vc_result) || 2.5;
+  const hasVent = vcApp > 0;
+
+  // Smoke layer height ratio: bigger fire = deeper smoke
+  // NFPA 502 approximation: smoke layer depth ~ 0.2 * H for small fire, up to 0.6 * H for large
+  const smokeFrac = Math.min(0.65, 0.18 + 0.006 * Math.sqrt(hrr));
+  // If ventilation applied and >= critical → smoke pushed downstream, layer thins upstream
+  const smokeLayerH = tH * smokeFrac * (hasVent ? Math.max(0.25, 1 - (vcApp / vcCrit) * 0.75) : 1);
+  const smokeTopY = tY - archH * 0.3 + (tH * 0.1); // starts from near ceiling
+  const smokeBaseY = smokeTopY + smokeLayerH;
+
   // Engineering drawing background
   ctx.fillStyle='#eef2f7'; ctx.fillRect(0,0,W,H);
   // Title bar
   ctx.fillStyle='#1a1714'; ctx.fillRect(0,0,W,padT);
   ctx.fillStyle='white'; ctx.font='bold 11px DM Mono,monospace'; ctx.textAlign='left';
-  ctx.fillText('POTONGAN MELINTANG — '+nLajur+' LAJUR × '+wLajur+' m | H='+H_cl+' m | Lebar Total '+totalW.toFixed(2)+' m',10,20);
+  ctx.fillText('POTONGAN MELINTANG — '+nLajur+' LAJUR × '+wLajur+' m | H='+H_cl+' m | Lebar Total '+totalW.toFixed(2)+' m | 🔥 HRR: '+hrr+' MW',10,20);
   ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='8px DM Mono'; ctx.textAlign='right';
-  ctx.fillText('NFPA 502:2026 · Permen PUPR 5/2023 Lamp.I',W-10,20);
+  ctx.fillText('NFPA 502:2026 · Vc = '+(hasVent ? vcApp.toFixed(1) : '0.0')+' m/s (Kritis: '+vcCrit.toFixed(2)+' m/s)',W-10,20);
 
   // Ground/tanah
   ctx.fillStyle='#c2b49a'; ctx.fillRect(0,padT,W,H-padT);
-  // Hatch ground
   ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1;
   for(let x=0;x<W;x+=14){ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x-20,H);ctx.stroke();}
 
@@ -6140,12 +6245,66 @@ function drawCrossSection(ctx, W, H) {
   ctx.strokeStyle='#5a5450'; ctx.lineWidth=1.5;
   ctx.stroke();
 
-  // Interior
+  // Interior background
   ctx.fillStyle='#f5f3ef';
   ctx.beginPath();
   ctx.moveTo(tX,fY);ctx.lineTo(tX,tY);
   ctx.bezierCurveTo(tX,tY-archH,tX+tW/2,tY-archH,tX+tW,tY);
   ctx.lineTo(tX+tW,fY);ctx.closePath();ctx.fill();
+
+  // ── FRESH AIR ZONE (below smoke) ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tX,fY);ctx.lineTo(tX,smokeBaseY);
+  ctx.lineTo(tX+tW,smokeBaseY);ctx.lineTo(tX+tW,fY);ctx.closePath();
+  ctx.fillStyle='rgba(186,230,253,0.45)'; // light blue
+  ctx.fill();
+  // Fresh air label
+  ctx.fillStyle='rgba(2,132,199,0.8)';
+  ctx.font='bold 9px DM Mono,monospace'; ctx.textAlign='center';
+  if(smokeBaseY < fY - 12) ctx.fillText('ZONA UDARA BERSIH (Fresh Air Zone)',(tX+tX+tW)/2, smokeBaseY + (fY-smokeBaseY)*0.55);
+  ctx.restore();
+
+  // ── SMOKE LAYER (upper zone) ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tX,smokeTopY); ctx.lineTo(tX,tY);
+  ctx.bezierCurveTo(tX,tY-archH,tX+tW/2,tY-archH,tX+tW,tY);
+  ctx.lineTo(tX+tW,smokeTopY);
+  ctx.closePath();
+  const smokeAlpha = hasVent ? Math.max(0.15, 0.55 * (1 - vcApp/vcCrit)) : 0.55;
+  ctx.fillStyle=`rgba(80,70,60,${smokeAlpha})`;
+  ctx.fill();
+
+  // Smoke swirls
+  ctx.strokeStyle=`rgba(60,50,40,${smokeAlpha*0.7})`; ctx.lineWidth=1; ctx.setLineDash([3,5]);
+  for(let si=0;si<4;si++){
+    const sx=tX+tW*(0.15+si*0.22);
+    const sy=smokeTopY + smokeLayerH*0.4;
+    ctx.beginPath(); ctx.ellipse(sx, sy, 14+si*4, 7, 0, 0, Math.PI); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Smoke layer label
+  if(smokeLayerH > 20){
+    ctx.fillStyle=`rgba(255,255,255,${smokeAlpha*1.4})`;
+    ctx.font='bold 9px DM Mono,monospace'; ctx.textAlign='center';
+    ctx.fillText('LAPISAN ASAP (Smoke Layer) ~'+(smokeLayerH/sc).toFixed(1)+' m',(tX+tX+tW)/2, smokeTopY+smokeLayerH*0.45);
+  }
+  ctx.restore();
+
+  // Smoke interface line
+  ctx.save();
+  ctx.strokeStyle='rgba(180,120,40,0.85)'; ctx.lineWidth=2; ctx.setLineDash([8,5]);
+  ctx.beginPath(); ctx.moveTo(tX, smokeBaseY); ctx.lineTo(tX+tW, smokeBaseY); ctx.stroke();
+  ctx.setLineDash([]);
+  // Smoke interface dimension
+  const interfaceHeight = (fY - smokeBaseY) / sc;
+  ctx.fillStyle='#b45309'; ctx.font='bold 8px DM Mono'; ctx.textAlign='left';
+  ctx.fillText('↕ '+interfaceHeight.toFixed(1)+' m (tinggi bebas asap)', tX+tW+6, smokeBaseY+4);
+  ctx.restore();
+
+  // Tunnel outline (redraw over smoke)
   ctx.strokeStyle='#4a453f'; ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(tX,fY);ctx.lineTo(tX,tY);
@@ -6180,7 +6339,6 @@ function drawCrossSection(ctx, W, H) {
       ctx.setLineDash([]);
       ctx.fillStyle='#f97316'; ctx.font='bold 8px DM Mono'; ctx.textAlign='center';
       ctx.fillText('TROTOAR '+(wTrot>=1?wTrot.toFixed(2):wTrot.toFixed(2))+'m',(x1+x2)/2,fY-twH-6);
-      // kerb
       const kerbX=x1===tX?x2:x1;
       ctx.fillStyle='#ea580c'; ctx.fillRect(kerbX-3,fY-twH,6,twH);
     });
@@ -6206,7 +6364,6 @@ function drawCrossSection(ctx, W, H) {
     ctx.beginPath();ctx.moveTo(lx,fY-pavH);ctx.lineTo(lx,fY-2);ctx.stroke();
   }
   ctx.setLineDash([]);
-  // Lane width label
   ctx.fillStyle='#374151'; ctx.font='8px DM Mono'; ctx.textAlign='center';
   ctx.fillText('← '+wLajur+' m →',rdX1+wLajur*sc/2,fY-pavH-5);
 
@@ -6247,11 +6404,29 @@ function drawCrossSection(ctx, W, H) {
     ctx.textBaseline='middle'; ctx.fillText('JET FAN',ceilCx,ceilCy); ctx.textBaseline='alphabetic';
     ctx.fillStyle='#065f46'; ctx.font='7px DM Mono';
     ctx.fillText('VENTILASI MEKANIS',ceilCx,ceilCy+26);
-    // airflow
-    ctx.strokeStyle='rgba(16,185,129,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+
+    // Airflow arrows in fresh air zone
+    const afY = smokeBaseY + (fY - smokeBaseY) * 0.5; // center of fresh air zone
+    const arrowCol = hasVent ? 'rgba(16,185,129,0.8)' : 'rgba(16,185,129,0.3)';
+    ctx.strokeStyle=arrowCol; ctx.lineWidth=2; ctx.setLineDash([5,4]);
     ctx.beginPath();ctx.moveTo(tX+14,ceilCurveY);ctx.lineTo(ceilCx-32,ceilCurveY);ctx.stroke();
     ctx.beginPath();ctx.moveTo(ceilCx+32,ceilCurveY);ctx.lineTo(tX+tW-14,ceilCurveY);ctx.stroke();
     ctx.setLineDash([]);
+
+    // Draw directional arrow in fresh air band
+    if(hasVent && vcApp >= vcCrit * 0.3){
+      ctx.save();
+      ctx.strokeStyle='rgba(16,185,129,0.7)'; ctx.fillStyle='rgba(16,185,129,0.7)';
+      ctx.lineWidth=2;
+      const arY = fY - pavH - 16;
+      // Arrow body
+      ctx.beginPath(); ctx.moveTo(tX+18, arY); ctx.lineTo(tX+tW-18, arY); ctx.stroke();
+      // Arrowhead
+      ctx.beginPath(); ctx.moveTo(tX+tW-18, arY); ctx.lineTo(tX+tW-28, arY-6); ctx.lineTo(tX+tW-28, arY+6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(16,185,129,0.9)'; ctx.font='bold 8px DM Mono'; ctx.textAlign='center';
+      ctx.fillText('→ Aliran udara segar ('+vcApp.toFixed(1)+'m/s)', tX+tW/2, arY-8);
+      ctx.restore();
+    }
   }
 
   // FFFS nozzles
@@ -6273,7 +6448,6 @@ function drawCrossSection(ctx, W, H) {
   }
 
   // Wall equipment
-  // APAR
   const aparX=tX+8, aparY=fY-pavH-30;
   ctx.fillStyle='#ef4444'; ctx.fillRect(aparX,aparY,14,28);
   ctx.fillStyle='white'; ctx.font='bold 7px DM Sans'; ctx.textAlign='center';
@@ -6281,7 +6455,6 @@ function drawCrossSection(ctx, W, H) {
   ctx.fillStyle='#ef4444'; ctx.font='bold 8px DM Mono';
   ctx.fillText('APAR',aparX+7,aparY-5);
 
-  // SOS
   const sosX=tX+tW-22, sosY=fY-pavH-30;
   ctx.fillStyle='#1d5fa8'; ctx.fillRect(sosX,sosY,14,28);
   ctx.fillStyle='white'; ctx.font='bold 7px DM Mono'; ctx.textAlign='center';
@@ -6330,7 +6503,7 @@ function drawCrossSection(ctx, W, H) {
   // Legend
   const legX=W-155, legY2=padT+8;
   ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.strokeStyle='#d1d5db'; ctx.lineWidth=1;
-  ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(legX-6,legY2-4,150,148,6); else ctx.rect(legX-6,legY2-4,150,148);
+  ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(legX-6,legY2-4,150,170,6); else ctx.rect(legX-6,legY2-4,150,170);
   ctx.fill(); ctx.stroke();
   ctx.fillStyle='#1a1714'; ctx.font='bold 8px DM Mono'; ctx.textAlign='left';
   ctx.fillText('LEGENDA',legX,legY2+8);
@@ -6340,6 +6513,8 @@ function drawCrossSection(ctx, W, H) {
     ['#0284c7','Saluran Drainase'],['#92400e','Proteksi Struktur Api'],
     ['#a855f7','Kamera CCTV'],['#ef4444','APAR'],
     ['#1d5fa8','Telepon SOS Darurat'],['#fde68a','Lampu Terowongan'],
+    ['rgba(80,70,60,0.7)','Lapisan Asap (Smoke Layer)'],
+    ['rgba(186,230,253,0.7)','Zona Udara Bersih'],
   ];
   legItems.forEach(([c,l],i)=>{
     ctx.fillStyle=c; ctx.fillRect(legX,legY2+16+i*12,8,8);
@@ -6348,23 +6523,368 @@ function drawCrossSection(ctx, W, H) {
   });
 }
 
+
 // ── PERSPECTIVE 3D — REWRITTEN ────────────────
 
-function buildLegend() {
-  const items = [
-    [COLORS.APAR,     'APAR — Setiap ≤ 90 m'],
-    [COLORS.CCTV,     'Kamera CCTV — Setiap ≤ 75 m'],
-    [COLORS.SOS,      'Telepon SOS Darurat — Setiap ≤ 150 m'],
-    [COLORS.HIDRAN,   'Hidran / Kopling Air — Setiap ≤ 120 m'],
-    [COLORS.WAYF,     'Rambu Arah Evakuasi — Setiap ≤ 25 m'],
-    [COLORS.EXIT,     'Pintu Keluar Darurat — Setiap ≤ 300 m'],
-    [COLORS.JET_FAN,  'Jet Fan Ventilasi — Setiap ≤ 250 m'],
-    [COLORS.SENSOR,   'Sensor CO/NO₂/Asap — Setiap ≤ 100 m'],
-    ['#10b981',       'Cross-Passageway (CP) antar tube'],
-    ['#0284c7',       'Saluran Drainase'],
-    ['#92400e',       'Proteksi Struktur Api (RWS 120 mnt)'],
-    ['rgba(6,182,212,0.7)', 'Nozzle FFFS (Pemadam Tetap)'],
+// ── LONGITUDINAL SECTION (POTONGAN MEMANJANG) ─────────────────────
+function drawLongitudinalSection(ctx, W, H) {
+  ctx.clearRect(0, 0, W, H);
+
+  const m         = parseFloat(D.panjang_m) || 500;
+  const H_cl      = parseFloat(D.clearance) || 5.0;
+  const grade     = parseFloat(D.grade) || 0;
+  const hrr       = _fireHRR || 30;
+  const firePosX  = _firePosRatio * m;          // metres from entry
+  const vcApp     = _vcCurrent || 0;
+  const vcCrit    = parseFloat(D.vc_result) || 2.5;
+  const hasVent   = vcApp > 0;
+
+  // HRR label from select
+  const hrrSel = document.getElementById('fire-hrr-select');
+  const hrrLabel = hrrSel ? hrrSel.options[hrrSel.selectedIndex].getAttribute('data-label') : '';
+
+  // Layout constants
+  const PAD_L = 55, PAD_R = 30, PAD_T = 36, PAD_B = 70;
+  const tW  = W - PAD_L - PAD_R;
+  const tH  = Math.min((H - PAD_T - PAD_B) * 0.55, 110); // tunnel height in px
+  const tX  = PAD_L;
+  const tY  = PAD_T + (H - PAD_T - PAD_B) * 0.15;   // top of tunnel bore
+  const fY  = tY + tH;                                // floor
+  const gradeOffsetY = (grade / 100) * tW;            // grade offset over tunnel length
+  const sc  = tW / m;
+
+  // Fire position in px
+  const firePx = tX + firePosX * sc;
+
+  // ── Background sky ──
+  const skyG = ctx.createLinearGradient(0, 0, 0, tY);
+  skyG.addColorStop(0, '#dce8f5');
+  skyG.addColorStop(1, '#c5d9ef');
+  ctx.fillStyle = skyG; ctx.fillRect(0, 0, W, H);
+
+  // ── Ground strata ──
+  ctx.fillStyle = '#c2b49a'; ctx.fillRect(0, fY, W, H - fY);
+  // Hatch
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+  for (let x = -20; x < W; x += 14) {
+    ctx.beginPath(); ctx.moveTo(x, fY); ctx.lineTo(x + 20, H); ctx.stroke();
+  }
+
+  // ── Tunnel bore (side view) ──
+  // Grade: slight slope - tY stays flat but floor rises/falls with grade
+  const gradeY = grade >= 0 ? -gradeOffsetY : gradeOffsetY;  // positive grade: exit higher
+
+  // Outer rock/lining
+  ctx.fillStyle = '#8a8278';
+  ctx.fillRect(tX - 2, tY - 14, tW + 4, tH + 16);
+
+  // Interior bore with grade
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tX, fY);
+  ctx.lineTo(tX, tY);
+  ctx.lineTo(tX + tW, tY + gradeY);
+  ctx.lineTo(tX + tW, fY + gradeY);
+  ctx.closePath();
+  ctx.fillStyle = '#f0ece4';
+  ctx.fill();
+  ctx.restore();
+
+  // Road surface
+  ctx.fillStyle = '#b8b0a0';
+  ctx.beginPath();
+  ctx.moveTo(tX, fY);
+  ctx.lineTo(tX + tW, fY + gradeY);
+  ctx.lineTo(tX + tW, fY + gradeY + 6);
+  ctx.lineTo(tX, fY + 6);
+  ctx.closePath(); ctx.fill();
+
+  // Tunnel ceiling line
+  ctx.strokeStyle = '#5a5450'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tX, tY);
+  ctx.lineTo(tX + tW, tY + gradeY);
+  ctx.stroke();
+
+  // Tunnel floor line
+  ctx.beginPath();
+  ctx.moveTo(tX, fY);
+  ctx.lineTo(tX + tW, fY + gradeY);
+  ctx.stroke();
+
+  // Portals (left = entry, right = exit)
+  function drawPortal(px, pFloorY, pTopY, label, isEntry) {
+    const pW = 16;
+    ctx.fillStyle = isEntry ? '#2d4a6b' : '#3a3228';
+    ctx.fillRect(px - pW / 2, pTopY - 8, pW, pFloorY - pTopY + 8);
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+    ctx.strokeRect(px - pW / 2, pTopY - 8, pW, pFloorY - pTopY + 8);
+    ctx.fillStyle = '#f0ece4';
+    ctx.fillRect(px - pW / 2 + 2, pTopY, pW - 4, pFloorY - pTopY);
+    ctx.fillStyle = 'white'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText(label, px, pTopY - 12);
+  }
+  drawPortal(tX, fY, tY, 'PORTAL MASUK (Entry)', true);
+  drawPortal(tX + tW, fY + gradeY, tY + gradeY, 'PORTAL KELUAR (Exit)', false);
+
+  // ── SMOKE DYNAMICS ──
+  // Backlayering length: NFPA 502 conceptually related to HRR and Vc
+  // L_back ∝ HRR^(1/3) / Vc  (simplified conceptual model)
+  const backLayerCoeff = 0.6 * Math.pow(hrr, 1/3); // nominal metres per (m/s)
+  const backLenM = hasVent
+    ? Math.max(0, backLayerCoeff * (1 - vcApp / vcCrit)) * (vcApp < vcCrit ? 1 : 0)
+    : backLayerCoeff * 2.5; // no vent → significant back-layering
+
+  const backLenPx = Math.min(backLenM * sc, firePosX * sc - 5);
+  const downLenPx = tW - (firePosX * sc); // downstream to exit
+
+  // Smoke layer depth (same logic as cross section)
+  const smokeFrac = Math.min(0.62, 0.18 + 0.006 * Math.sqrt(hrr));
+  const smokeDepthPx = tH * smokeFrac;
+  const smokeTopY_atFire = tY + smokeDepthPx * 0.1;
+  const smokeBaseY_atFire = tY + smokeDepthPx;
+
+  // ── UPSTREAM BACKLAYERING SMOKE (dark, gravity-spread) ──
+  if (backLenPx > 4) {
+    ctx.save();
+    const backGrad = ctx.createLinearGradient(firePx - backLenPx, 0, firePx, 0);
+    backGrad.addColorStop(0, 'rgba(60,50,40,0.05)');
+    backGrad.addColorStop(0.7, 'rgba(70,55,42,0.45)');
+    backGrad.addColorStop(1, 'rgba(80,65,50,0.65)');
+    ctx.fillStyle = backGrad;
+    ctx.beginPath();
+    ctx.moveTo(firePx - backLenPx, tY + tH * 0.1);
+    ctx.lineTo(firePx, smokeTopY_atFire);
+    ctx.lineTo(firePx, smokeBaseY_atFire);
+    ctx.lineTo(firePx - backLenPx, tY + smokeDepthPx * 0.7);
+    ctx.closePath();
+    ctx.fill();
+
+    // Backlayering label + dimension
+    if (backLenPx > 30) {
+      ctx.fillStyle = 'rgba(120,80,40,0.9)';
+      ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
+      ctx.fillText('← BACKLAYERING: '+backLenM.toFixed(0)+' m', firePx - backLenPx/2, tY + smokeDepthPx*0.4 + 4);
+      ctx.strokeStyle = 'rgba(180,120,40,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(firePx - backLenPx, smokeBaseY_atFire * 0.75 + tY*0.25);
+      ctx.lineTo(firePx, smokeBaseY_atFire); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.restore();
+  } else if (hasVent && vcApp >= vcCrit) {
+    // Label: backlayering teratasi
+    ctx.fillStyle = 'rgba(16,185,129,0.9)';
+    ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText('✓ BACKLAYERING TERATASI', firePx - 60, tY + 16);
+  }
+
+  // ── DOWNSTREAM SMOKE (lighter, flowing to exit) ──
+  if (downLenPx > 4) {
+    const downOpacity = hasVent ? Math.min(0.7, 0.35 + 0.35 * (1 - vcApp/vcCrit)) : 0.6;
+    ctx.save();
+    const downGrad = ctx.createLinearGradient(firePx, 0, firePx + downLenPx, 0);
+    downGrad.addColorStop(0, `rgba(75,60,48,${downOpacity})`);
+    downGrad.addColorStop(0.6, `rgba(80,65,50,${downOpacity * 0.85})`);
+    downGrad.addColorStop(1, `rgba(60,50,40,${downOpacity * 0.3})`);
+    ctx.fillStyle = downGrad;
+    const smokeBottomDown = hasVent && vcApp >= vcCrit
+      ? smokeBaseY_atFire * 0.6 + fY * 0.4  // pushed up by ventilation
+      : smokeBaseY_atFire;
+    ctx.beginPath();
+    ctx.moveTo(firePx, smokeTopY_atFire);
+    ctx.lineTo(firePx + downLenPx, tY + tH * 0.05 + gradeY);
+    ctx.lineTo(firePx + downLenPx, smokeBottomDown * 0.5 + tY * 0.5 + gradeY * 0.5);
+    ctx.lineTo(firePx, smokeBottomDown);
+    ctx.closePath();
+    ctx.fill();
+
+    // Downstream label
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
+    if (downLenPx > 40) ctx.fillText('DOWNSTREAM SMOKE', firePx + downLenPx * 0.5, tY + smokeDepthPx * 0.35 + 4);
+    ctx.restore();
+  }
+
+  // ── FIRE SOURCE ──
+  const fireFloorY = fY + (firePosX / m) * gradeY;
+  // Flame plume
+  const flameH = Math.min(tH * 0.7, 18 + hrr * 0.28);
+  for (let fi = 0; fi < 5; fi++) {
+    const fw = 8 + fi * 3;
+    const fh = flameH * (1 - fi * 0.15);
+    const flameGrad = ctx.createLinearGradient(firePx, fireFloorY - fh, firePx, fireFloorY);
+    flameGrad.addColorStop(0, fi < 2 ? 'rgba(255,200,50,0.0)' : 'rgba(255,100,20,0)');
+    flameGrad.addColorStop(0.4, fi < 2 ? 'rgba(255,180,30,0.8)' : 'rgba(255,80,10,0.7)');
+    flameGrad.addColorStop(1, 'rgba(255,50,0,0.9)');
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.ellipse(firePx + (fi - 2) * 3, fireFloorY - fh / 2, fw / 2, fh / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Fire icon + label
+  ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText('🔥 '+hrrLabel, firePx, fireFloorY + 14);
+  ctx.fillStyle = '#ef4444'; ctx.font = '8px DM Mono';
+  ctx.fillText(hrr+' MW @ '+Math.round(firePosX)+'m', firePx, fireFloorY + 24);
+
+  // Dotted vertical ref line from fire to floor
+  ctx.strokeStyle = 'rgba(239,68,68,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(firePx, tY); ctx.lineTo(firePx, fY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── JET FAN ARROWS (ventilation) ──
+  if (hasVent && (catGte('B') || ['longitudinal','transverse','semi_trans'].includes(D.vent))) {
+    const jfData = window._jfData;
+    const jfPositions = [];
+    if (jfData && jfData.firstPos && jfData.interval) {
+      for (let pos = jfData.firstPos; pos < m; pos += jfData.interval) jfPositions.push(pos);
+    } else {
+      for (let pos = 125; pos < m; pos += 250) jfPositions.push(pos);
+    }
+
+    jfPositions.forEach(pos => {
+      const jx = tX + pos * sc;
+      const jy = tY + 8;
+      // Fan symbol (small circle at ceiling)
+      ctx.fillStyle = '#10b981'; ctx.shadowColor = '#10b981'; ctx.shadowBlur = 6;
+      ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+        ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx + Math.cos(a) * 5, jy + Math.sin(a) * 4); ctx.stroke();
+      }
+      // Airflow arrow → downstream
+      const arY = tY + tH * 0.72;
+      ctx.strokeStyle = 'rgba(16,185,129,0.65)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(jx - 18, arY); ctx.lineTo(jx + 22, arY); ctx.stroke();
+      ctx.fillStyle = 'rgba(16,185,129,0.65)';
+      ctx.beginPath(); ctx.moveTo(jx + 22, arY); ctx.lineTo(jx + 14, arY - 5); ctx.lineTo(jx + 14, arY + 5); ctx.closePath(); ctx.fill();
+    });
+
+    // Vc label
+    ctx.fillStyle = '#10b981'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText('VENTILASI AKTIF — Vc = '+vcApp.toFixed(1)+' m/s / Vc_kritis = '+vcCrit.toFixed(2)+' m/s',
+      tX + tW / 2, fY + 22);
+    const ratio = vcApp / vcCrit;
+    ctx.fillStyle = ratio >= 1 ? '#10b981' : ratio >= 0.7 ? '#f59e0b' : '#ef4444';
+    ctx.fillText(ratio >= 1 ? '✓ Kecepatan sudah mencapai/melebihi Vc kritis — backlayering teratasi'
+      : '⚠ Kecepatan < Vc kritis — backlayering masih terjadi', tX + tW / 2, fY + 35);
+  }
+
+  // ── Fresh air zone annotation ──
+  const freshZoneY = fY - tH * 0.35;
+  if (!hasVent || vcApp < vcCrit) {
+    // Show fresh air only downstream side when no/partial vent
+    ctx.fillStyle = 'rgba(186,230,253,0.35)';
+    ctx.fillRect(tX, freshZoneY, firePosX * sc, fY - freshZoneY);
+    ctx.fillStyle = 'rgba(2,132,199,0.6)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+    if (firePosX * sc > 30) ctx.fillText('UDARA SEGAR →', tX + firePosX * sc * 0.4, freshZoneY + 10);
+  } else {
+    // Full downstream fresh air (vent overcomes backlayering)
+    ctx.fillStyle = 'rgba(186,230,253,0.3)';
+    ctx.fillRect(tX, freshZoneY, tW, fY - freshZoneY);
+    ctx.fillStyle = 'rgba(2,132,199,0.7)'; ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText('→ SEMUA ALIRAN DOWNSTREAM (Ventilasi Efektif) →', tX + tW / 2, freshZoneY + 10);
+  }
+
+  // ── Title bar ──
+  ctx.fillStyle = '#1a1714'; ctx.fillRect(0, 0, W, PAD_T);
+  ctx.fillStyle = 'white'; ctx.font = 'bold 11px DM Mono,monospace'; ctx.textAlign = 'left';
+  ctx.fillText('POTONGAN MEMANJANG — '+(D.nama||'TEROWONGAN')+' · L='+m+'m · H='+H_cl+'m · Grade='+grade+'%', 10, 20);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'right';
+  ctx.fillText('🔥 HRR '+hrr+' MW ('+hrrLabel+') · Vc='+(hasVent?vcApp.toFixed(1):'0.0')+'/'+vcCrit.toFixed(2)+'m/s · NFPA 502:2026', W - 10, 20);
+
+  // ── Scale bar ──
+  const scaleBarM = m > 500 ? 200 : m > 200 ? 100 : 50;
+  const scaleBarPx = scaleBarM * sc;
+  const sbX = W - PAD_R - scaleBarPx - 10;
+  const sbY = H - 16;
+  ctx.strokeStyle = '#1a1714'; ctx.lineWidth = 2; ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(sbX, sbY); ctx.lineTo(sbX + scaleBarPx, sbY);
+  ctx.moveTo(sbX, sbY - 4); ctx.lineTo(sbX, sbY + 4);
+  ctx.moveTo(sbX + scaleBarPx, sbY - 4); ctx.lineTo(sbX + scaleBarPx, sbY + 4);
+  ctx.stroke();
+  ctx.fillStyle = '#1a1714'; ctx.font = '9px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText(scaleBarM + ' m', sbX + scaleBarPx / 2, sbY - 7);
+
+  // ── Grade label ──
+  ctx.fillStyle = '#374151'; ctx.font = '8px DM Mono'; ctx.textAlign = 'left';
+  ctx.fillText('Grade: '+(grade>0?'+':'')+grade+'%', tX + 4, fY - 4);
+
+  // ── H dimension ──
+  ctx.strokeStyle = '#374151'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(tX - 12, tY); ctx.lineTo(tX - 12, fY); ctx.stroke();
+  ctx.moveTo(tX - 16, tY); ctx.lineTo(tX - 8, tY); ctx.stroke();
+  ctx.moveTo(tX - 16, fY); ctx.lineTo(tX - 8, fY); ctx.stroke();
+  ctx.save(); ctx.translate(tX - 24, (tY + fY) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#374151'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText('H = '+H_cl+' m', 0, 0);
+  ctx.restore();
+
+  // ── Fire position indicator at bottom ──
+  ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(firePx, fY); ctx.lineTo(firePx, fY + 18); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ef4444'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText(Math.round(firePosX)+' m', firePx, fY + 28);
+
+  // Legend box bottom-left
+  const legX = PAD_L, legY = H - PAD_B + 8;
+  const legItems = [
+    ['rgba(80,70,60,0.7)', 'Backlayering (asap ke upstream)'],
+    ['rgba(75,60,48,0.6)', 'Downstream smoke'],
+    ['rgba(186,230,253,0.7)', 'Zona udara segar'],
+    ['#10b981', 'Jet fan + arah aliran'],
+    ['#ef4444', 'Sumber kebakaran (HRR)'],
   ];
+  legItems.forEach(([c, l], i) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(legX + i * 140, legY, 10, 10);
+    ctx.fillStyle = '#1a1714'; ctx.font = '8px DM Sans'; ctx.textAlign = 'left';
+    ctx.fillText(l, legX + i * 140 + 14, legY + 9);
+  });
+}
+
+
+function buildLegend() {
+  let items;
+  if (currentDiagramView === 'cross') {
+    items = [
+      [COLORS.APAR,  'APAR'],
+      ['#10b981',    'Jet Fan (Ventilasi)'],
+      ['#ef4444',    'LHD (Kabel Panas)'],
+      ['#06b6d4',    'Nozzle FFFS'],
+      ['#f97316',    'Trotoar / Kerb'],
+      ['rgba(80,70,60,0.7)', 'Lapisan Asap (Smoke Layer)'],
+      ['rgba(186,230,253,0.7)', 'Zona Udara Bersih'],
+      ['#fde68a',    'Lampu Terowongan'],
+    ];
+  } else if (currentDiagramView === 'longitudinal_section') {
+    items = [
+      ['rgba(80,70,60,0.65)', 'Backlayering (upstream)'],
+      ['rgba(75,60,48,0.6)', 'Asap downstream'],
+      ['rgba(186,230,253,0.7)', 'Zona udara segar'],
+      ['#10b981',    'Jet fan + arah aliran'],
+      ['#ef4444',    'Sumber kebakaran (fire source)'],
+      ['#5a5450',    'Struktur terowongan / portal'],
+    ];
+  } else {
+    items = [
+      [COLORS.APAR,     'APAR — Setiap ≤ 90 m'],
+      [COLORS.CCTV,     'Kamera CCTV — Setiap ≤ 75 m'],
+      [COLORS.SOS,      'Telepon SOS Darurat — Setiap ≤ 150 m'],
+      [COLORS.HIDRAN,   'Hidran / Kopling Air — Setiap ≤ 120 m'],
+      [COLORS.WAYF,     'Rambu Arah Evakuasi — Setiap ≤ 25 m'],
+      [COLORS.EXIT,     'Pintu Keluar Darurat — Setiap ≤ 300 m'],
+      [COLORS.JET_FAN,  'Jet Fan Ventilasi — Setiap ≤ 250 m'],
+      [COLORS.SENSOR,   'Sensor CO/NO₂/Asap — Setiap ≤ 100 m'],
+      ['#10b981',       'Cross-Passageway (CP) antar tube'],
+      ['#0284c7',       'Saluran Drainase'],
+      ['#92400e',       'Proteksi Struktur Api (RWS 120 mnt)'],
+      ['rgba(6,182,212,0.7)', 'Nozzle FFFS (Pemadam Tetap)'],
+    ];
+  }
 
   document.getElementById('diagram-legend').innerHTML = items.map(([c, l]) =>
     `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${l}</div>`
