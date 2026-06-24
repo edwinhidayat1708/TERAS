@@ -5746,6 +5746,10 @@ const COLORS = {
 };
 
 function setDiagramView(view, btn) {
+  // Stop live animation if leaving longitudinal_section
+  if (currentDiagramView === 'longitudinal_section' && view !== 'longitudinal_section') {
+    _stopAnimation();
+  }
   currentDiagramView = view;
   document.querySelectorAll('.diagram-view-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -6526,214 +6530,278 @@ function drawCrossSection(ctx, W, H) {
 
 // ── PERSPECTIVE 3D — REWRITTEN ────────────────
 
-// ── LONGITUDINAL SECTION (POTONGAN MEMANJANG) ─────────────────────
-function drawLongitudinalSection(ctx, W, H) {
-  ctx.clearRect(0, 0, W, H);
+// ══════════════════════════════════════════════
+// LONGITUDINAL SECTION — LIVE ANIMATION ENGINE
+// ══════════════════════════════════════════════
 
-  const m         = parseFloat(D.panjang_m) || 500;
-  const H_cl      = parseFloat(D.clearance) || 5.0;
-  const grade     = parseFloat(D.grade) || 0;
-  const hrr       = _fireHRR || 30;
-  const firePosX  = _firePosRatio * m;          // metres from entry
-  const vcApp     = _vcCurrent || 0;
-  const vcCrit    = parseFloat(D.vc_result) || 2.5;
-  const hasVent   = vcApp > 0;
+// Particle pools
+let _smokeParticles = [];
+let _flameParticles = [];
+let _emberParticles = [];
+let _animRAF = null;
+let _animRunning = false;
+let _animLastTime = 0;
+let _animCtx = null;
+let _animW = 0, _animH = 0;
 
-  // HRR label from select
+// Layout cache (set on first render, updated on resize)
+let _anim = {}; // {tX, tY, fY, tW, tH, firePx, sc, m, gradeY, PAD_L, PAD_T}
+
+function _initParticles() {
+  _smokeParticles = [];
+  _flameParticles = [];
+  _emberParticles = [];
+
+  const { firePx, tY, fY, tW, tX } = _anim;
+  const floorAtFire = fY + ((_anim.firePosRatio) * _anim.gradeY);
+
+  // Pre-seed smoke particles spread across tunnel
+  for (let i = 0; i < 120; i++) {
+    _spawnSmoke(true, i / 120);
+  }
+  // Pre-seed flames
+  for (let i = 0; i < 30; i++) {
+    _spawnFlame(true, i / 30);
+  }
+}
+
+function _spawnSmoke(preSeed, lifeFrac) {
+  const { firePx, tY, fY, tW, tX, m, sc, gradeY, firePosRatio } = _anim;
+  const vcApp  = _vcCurrent || 0;
+  const vcCrit = parseFloat(D.vc_result) || 2.5;
+  const hrr    = _fireHRR || 30;
+
+  // Spawn at fire source, offset slightly
+  const spawnX = firePx + (Math.random() - 0.5) * 18;
+  const floorY  = fY + firePosRatio * gradeY;
+  const ceilY   = tY + firePosRatio * gradeY;
+  const spawnY  = floorY - 10 - Math.random() * (floorY - ceilY) * 0.3;
+
+  // Horizontal velocity: negative = upstream (backlayering), positive = downstream
+  // Natural buoyancy/thermal pushes smoke both ways; ventilation biases to +X
+  const naturalDrift = (Math.random() - 0.48) * 0.4; // slight downstream bias
+  const ventBias = (vcApp / Math.max(vcCrit, 0.1)) * (1.2 + Math.random() * 0.8);
+  let vx = naturalDrift + ventBias;
+
+  // Below critical: some particles go upstream (backlayering)
+  if (vcApp < vcCrit && Math.random() < 0.40 * (1 - vcApp / vcCrit)) {
+    vx = -(0.3 + Math.random() * 0.8) * (1 - vcApp / vcCrit * 0.7);
+  }
+
+  const vy = -(0.15 + Math.random() * 0.25); // rises slowly
+  const life = preSeed ? (lifeFrac || Math.random()) : 0;
+  const maxLife = 3.5 + Math.random() * 3.5; // seconds
+  const size  = 8 + Math.random() * 22;
+  const layer = Math.random(); // 0=dense near fire, 1=thin far
+
+  const p = { x: spawnX, y: spawnY, vx, vy, life: life * maxLife, maxLife, size, layer,
+              alpha: 0, drift: (Math.random() - 0.5) * 0.06 };
+
+  if (preSeed) {
+    // Spread pre-seeded particles across tunnel width
+    const goUp = Math.random() < 0.5;
+    const range = tW * 0.9;
+    p.x = tX + Math.random() * range;
+    p.y = ceilY + Math.random() * (floorY - ceilY) * 0.85;
+    p.life = Math.random() * maxLife;
+    // Pre-seeded upstream particles
+    if (p.x < firePx && vcApp < vcCrit) p.vx = -(0.2 + Math.random() * 0.5);
+    else p.vx = vx;
+  }
+
+  _smokeParticles.push(p);
+}
+
+function _spawnFlame(preSeed, lifeFrac) {
+  const { firePx, fY, firePosRatio, gradeY } = _anim;
+  const hrr = _fireHRR || 30;
+  const floorY = fY + firePosRatio * gradeY;
+  const flameH = Math.min((_anim.tH) * 0.72, 22 + hrr * 0.32);
+
+  const offsetX = (Math.random() - 0.5) * 24;
+  const life = preSeed ? (lifeFrac || Math.random()) : 0;
+  const maxLife = 0.35 + Math.random() * 0.55;
+
+  _flameParticles.push({
+    x: firePx + offsetX,
+    y: floorY - Math.random() * flameH * 0.3,
+    vy: -(0.8 + Math.random() * 1.8) * (hrr / 30) * 0.6,
+    vx: (Math.random() - 0.5) * 0.5,
+    life: life * maxLife,
+    maxLife,
+    size: 6 + Math.random() * (8 + hrr * 0.08),
+    hue: Math.random() < 0.5 ? 'flame_orange' : 'flame_yellow',
+  });
+}
+
+function _spawnEmber() {
+  const { firePx, fY, firePosRatio, gradeY, tY } = _anim;
+  const hrr = _fireHRR || 30;
+  const floorY = fY + firePosRatio * gradeY;
+  const vcApp = _vcCurrent || 0;
+  _emberParticles.push({
+    x: firePx + (Math.random() - 0.5) * 16,
+    y: floorY - 10 - Math.random() * (_anim.tH * 0.5),
+    vx: (Math.random() - 0.3 + vcApp * 0.15) * 1.2,
+    vy: -(0.3 + Math.random() * 0.6),
+    life: 0,
+    maxLife: 1.5 + Math.random() * 2,
+    size: 1.5 + Math.random() * 2.5,
+  });
+}
+
+function _stepParticles(dt) {
+  const { tX, tY, fY, tW, firePx, sc, m, gradeY, firePosRatio } = _anim;
+  const vcApp  = _vcCurrent || 0;
+  const vcCrit = parseFloat(D.vc_result) || 2.5;
+  const hrr    = _fireHRR || 30;
+
+  // ── Smoke particles ──
+  for (let i = _smokeParticles.length - 1; i >= 0; i--) {
+    const p = _smokeParticles[i];
+    p.life += dt;
+
+    // Fade in/out
+    const t = p.life / p.maxLife;
+    p.alpha = t < 0.1 ? t / 0.1 * 0.55 : t > 0.75 ? (1 - t) / 0.25 * 0.55 : 0.55;
+
+    // Apply ventilation force progressively
+    const ventForce = (vcApp / Math.max(vcCrit, 0.1)) * 0.04;
+    p.vx += ventForce * dt * 60;
+    // Clamp max speed
+    p.vx = Math.max(-2.5, Math.min(p.vx, 2.5 + vcApp * 0.4));
+    p.vy += p.drift * dt * 60 * 0.1;
+    p.vy = Math.max(-0.8, Math.min(p.vy, 0.1));
+    // Grow as rises
+    p.size += dt * 2.5;
+
+    // Move
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+
+    // Ceiling bounce
+    const localCeilY = tY + (p.x - tX) / tW * gradeY;
+    if (p.y < localCeilY + 4) { p.y = localCeilY + 4; p.vy = Math.abs(p.vy) * 0.2; }
+
+    // Floor (shouldn't go below)
+    const localFloorY = fY + (p.x - tX) / tW * gradeY;
+    if (p.y > localFloorY - 4) p.y = localFloorY - 4;
+
+    // Remove if out of tunnel or expired
+    if (p.life >= p.maxLife || p.x < tX - 40 || p.x > tX + tW + 40) {
+      _smokeParticles.splice(i, 1);
+    }
+  }
+
+  // ── Flame particles ──
+  for (let i = _flameParticles.length - 1; i >= 0; i--) {
+    const p = _flameParticles[i];
+    p.life += dt;
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.vx += (Math.random() - 0.5) * 0.08; // flicker
+    if (p.life >= p.maxLife) _flameParticles.splice(i, 1);
+  }
+
+  // ── Ember particles ──
+  for (let i = _emberParticles.length - 1; i >= 0; i--) {
+    const p = _emberParticles[i];
+    p.life += dt;
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.vy += 0.015; // gravity
+    if (p.life >= p.maxLife || p.x < tX - 60 || p.x > tX + tW + 60) {
+      _emberParticles.splice(i, 1);
+    }
+  }
+
+  // Spawn new particles
+  const smokeRate = 18 + hrr * 0.3;
+  if (_smokeParticles.length < smokeRate * 4) _spawnSmoke(false);
+  if (_smokeParticles.length < smokeRate * 4) _spawnSmoke(false);
+
+  const flameRate = 8 + hrr * 0.15;
+  if (_flameParticles.length < flameRate) _spawnFlame(false);
+  if (_flameParticles.length < flameRate) _spawnFlame(false);
+
+  if (Math.random() < 0.08 + hrr * 0.001) _spawnEmber();
+}
+
+function _drawLongSectionStatic(ctx, W, H) {
+  const { tX, tY, fY, tW, tH, firePx, m, sc, gradeY, PAD_L, PAD_T, PAD_B, firePosRatio } = _anim;
+  const vcApp  = _vcCurrent || 0;
+  const vcCrit = parseFloat(D.vc_result) || 2.5;
+  const hrr    = _fireHRR || 30;
+  const grade  = parseFloat(D.grade) || 0;
   const hrrSel = document.getElementById('fire-hrr-select');
   const hrrLabel = hrrSel ? hrrSel.options[hrrSel.selectedIndex].getAttribute('data-label') : '';
 
-  // Layout constants
-  const PAD_L = 55, PAD_R = 30, PAD_T = 36, PAD_B = 70;
-  const tW  = W - PAD_L - PAD_R;
-  const tH  = Math.min((H - PAD_T - PAD_B) * 0.55, 110); // tunnel height in px
-  const tX  = PAD_L;
-  const tY  = PAD_T + (H - PAD_T - PAD_B) * 0.15;   // top of tunnel bore
-  const fY  = tY + tH;                                // floor
-  const gradeOffsetY = (grade / 100) * tW;            // grade offset over tunnel length
-  const sc  = tW / m;
-
-  // Fire position in px
-  const firePx = tX + firePosX * sc;
-
-  // ── Background sky ──
+  // Sky
   const skyG = ctx.createLinearGradient(0, 0, 0, tY);
-  skyG.addColorStop(0, '#dce8f5');
-  skyG.addColorStop(1, '#c5d9ef');
+  skyG.addColorStop(0, '#c8dff5'); skyG.addColorStop(1, '#b8cfe8');
   ctx.fillStyle = skyG; ctx.fillRect(0, 0, W, H);
 
-  // ── Ground strata ──
+  // Ground
   ctx.fillStyle = '#c2b49a'; ctx.fillRect(0, fY, W, H - fY);
-  // Hatch
   ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
   for (let x = -20; x < W; x += 14) {
     ctx.beginPath(); ctx.moveTo(x, fY); ctx.lineTo(x + 20, H); ctx.stroke();
   }
 
-  // ── Tunnel bore (side view) ──
-  // Grade: slight slope - tY stays flat but floor rises/falls with grade
-  const gradeY = grade >= 0 ? -gradeOffsetY : gradeOffsetY;  // positive grade: exit higher
+  // Outer lining
+  ctx.fillStyle = '#7a7268';
+  ctx.fillRect(tX - 3, tY - 14, tW + 6, tH + 17);
 
-  // Outer rock/lining
-  ctx.fillStyle = '#8a8278';
-  ctx.fillRect(tX - 2, tY - 14, tW + 4, tH + 16);
-
-  // Interior bore with grade
+  // Tunnel interior
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(tX, fY);
-  ctx.lineTo(tX, tY);
+  ctx.moveTo(tX, fY); ctx.lineTo(tX, tY);
   ctx.lineTo(tX + tW, tY + gradeY);
   ctx.lineTo(tX + tW, fY + gradeY);
   ctx.closePath();
-  ctx.fillStyle = '#f0ece4';
+  ctx.fillStyle = '#1a1510'; // dark inside - better for fire/smoke contrast
   ctx.fill();
   ctx.restore();
 
   // Road surface
-  ctx.fillStyle = '#b8b0a0';
+  ctx.fillStyle = '#2a2520';
   ctx.beginPath();
-  ctx.moveTo(tX, fY);
-  ctx.lineTo(tX + tW, fY + gradeY);
-  ctx.lineTo(tX + tW, fY + gradeY + 6);
-  ctx.lineTo(tX, fY + 6);
+  ctx.moveTo(tX, fY); ctx.lineTo(tX + tW, fY + gradeY);
+  ctx.lineTo(tX + tW, fY + gradeY + 5); ctx.lineTo(tX, fY + 5);
   ctx.closePath(); ctx.fill();
 
-  // Tunnel ceiling line
-  ctx.strokeStyle = '#5a5450'; ctx.lineWidth = 2;
+  // Road centreline dashes
+  ctx.strokeStyle = 'rgba(255,230,80,0.25)'; ctx.lineWidth = 1.5; ctx.setLineDash([16, 14]);
   ctx.beginPath();
-  ctx.moveTo(tX, tY);
-  ctx.lineTo(tX + tW, tY + gradeY);
-  ctx.stroke();
+  ctx.moveTo(tX + 5, fY - 3 + gradeY * 0);
+  ctx.lineTo(tX + tW - 5, fY - 3 + gradeY);
+  ctx.stroke(); ctx.setLineDash([]);
 
-  // Tunnel floor line
-  ctx.beginPath();
-  ctx.moveTo(tX, fY);
-  ctx.lineTo(tX + tW, fY + gradeY);
-  ctx.stroke();
+  // Ceiling + floor lines
+  ctx.strokeStyle = '#6a6258'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(tX, tY); ctx.lineTo(tX + tW, tY + gradeY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tX, fY); ctx.lineTo(tX + tW, fY + gradeY); ctx.stroke();
 
-  // Portals (left = entry, right = exit)
+  // Portals
   function drawPortal(px, pFloorY, pTopY, label, isEntry) {
-    const pW = 16;
-    ctx.fillStyle = isEntry ? '#2d4a6b' : '#3a3228';
-    ctx.fillRect(px - pW / 2, pTopY - 8, pW, pFloorY - pTopY + 8);
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
-    ctx.strokeRect(px - pW / 2, pTopY - 8, pW, pFloorY - pTopY + 8);
-    ctx.fillStyle = '#f0ece4';
+    const pW = 18;
+    ctx.fillStyle = isEntry ? '#1B2A4A' : '#1B2A4A';
+    ctx.fillRect(px - pW / 2, pTopY - 10, pW, pFloorY - pTopY + 10);
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(px - pW / 2, pTopY - 10, pW, pFloorY - pTopY + 10);
+    // Opening
+    ctx.fillStyle = '#111';
     ctx.fillRect(px - pW / 2 + 2, pTopY, pW - 4, pFloorY - pTopY);
-    ctx.fillStyle = 'white'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
-    ctx.fillText(label, px, pTopY - 12);
+    ctx.fillStyle = 'white'; ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText(isEntry ? '← MASUK' : 'KELUAR →', px, pTopY - 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '7px DM Mono';
+    ctx.fillText(label, px, pTopY - 4);
   }
-  drawPortal(tX, fY, tY, 'PORTAL MASUK (Entry)', true);
-  drawPortal(tX + tW, fY + gradeY, tY + gradeY, 'PORTAL KELUAR (Exit)', false);
+  drawPortal(tX, fY, tY, 'Entry Portal', true);
+  drawPortal(tX + tW, fY + gradeY, tY + gradeY, 'Exit Portal', false);
 
-  // ── SMOKE DYNAMICS ──
-  // Backlayering length: NFPA 502 conceptually related to HRR and Vc
-  // L_back ∝ HRR^(1/3) / Vc  (simplified conceptual model)
-  const backLayerCoeff = 0.6 * Math.pow(hrr, 1/3); // nominal metres per (m/s)
-  const backLenM = hasVent
-    ? Math.max(0, backLayerCoeff * (1 - vcApp / vcCrit)) * (vcApp < vcCrit ? 1 : 0)
-    : backLayerCoeff * 2.5; // no vent → significant back-layering
-
-  const backLenPx = Math.min(backLenM * sc, firePosX * sc - 5);
-  const downLenPx = tW - (firePosX * sc); // downstream to exit
-
-  // Smoke layer depth (same logic as cross section)
-  const smokeFrac = Math.min(0.62, 0.18 + 0.006 * Math.sqrt(hrr));
-  const smokeDepthPx = tH * smokeFrac;
-  const smokeTopY_atFire = tY + smokeDepthPx * 0.1;
-  const smokeBaseY_atFire = tY + smokeDepthPx;
-
-  // ── UPSTREAM BACKLAYERING SMOKE (dark, gravity-spread) ──
-  if (backLenPx > 4) {
-    ctx.save();
-    const backGrad = ctx.createLinearGradient(firePx - backLenPx, 0, firePx, 0);
-    backGrad.addColorStop(0, 'rgba(60,50,40,0.05)');
-    backGrad.addColorStop(0.7, 'rgba(70,55,42,0.45)');
-    backGrad.addColorStop(1, 'rgba(80,65,50,0.65)');
-    ctx.fillStyle = backGrad;
-    ctx.beginPath();
-    ctx.moveTo(firePx - backLenPx, tY + tH * 0.1);
-    ctx.lineTo(firePx, smokeTopY_atFire);
-    ctx.lineTo(firePx, smokeBaseY_atFire);
-    ctx.lineTo(firePx - backLenPx, tY + smokeDepthPx * 0.7);
-    ctx.closePath();
-    ctx.fill();
-
-    // Backlayering label + dimension
-    if (backLenPx > 30) {
-      ctx.fillStyle = 'rgba(120,80,40,0.9)';
-      ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
-      ctx.fillText('← BACKLAYERING: '+backLenM.toFixed(0)+' m', firePx - backLenPx/2, tY + smokeDepthPx*0.4 + 4);
-      ctx.strokeStyle = 'rgba(180,120,40,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
-      ctx.beginPath(); ctx.moveTo(firePx - backLenPx, smokeBaseY_atFire * 0.75 + tY*0.25);
-      ctx.lineTo(firePx, smokeBaseY_atFire); ctx.stroke(); ctx.setLineDash([]);
-    }
-    ctx.restore();
-  } else if (hasVent && vcApp >= vcCrit) {
-    // Label: backlayering teratasi
-    ctx.fillStyle = 'rgba(16,185,129,0.9)';
-    ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
-    ctx.fillText('✓ BACKLAYERING TERATASI', firePx - 60, tY + 16);
-  }
-
-  // ── DOWNSTREAM SMOKE (lighter, flowing to exit) ──
-  if (downLenPx > 4) {
-    const downOpacity = hasVent ? Math.min(0.7, 0.35 + 0.35 * (1 - vcApp/vcCrit)) : 0.6;
-    ctx.save();
-    const downGrad = ctx.createLinearGradient(firePx, 0, firePx + downLenPx, 0);
-    downGrad.addColorStop(0, `rgba(75,60,48,${downOpacity})`);
-    downGrad.addColorStop(0.6, `rgba(80,65,50,${downOpacity * 0.85})`);
-    downGrad.addColorStop(1, `rgba(60,50,40,${downOpacity * 0.3})`);
-    ctx.fillStyle = downGrad;
-    const smokeBottomDown = hasVent && vcApp >= vcCrit
-      ? smokeBaseY_atFire * 0.6 + fY * 0.4  // pushed up by ventilation
-      : smokeBaseY_atFire;
-    ctx.beginPath();
-    ctx.moveTo(firePx, smokeTopY_atFire);
-    ctx.lineTo(firePx + downLenPx, tY + tH * 0.05 + gradeY);
-    ctx.lineTo(firePx + downLenPx, smokeBottomDown * 0.5 + tY * 0.5 + gradeY * 0.5);
-    ctx.lineTo(firePx, smokeBottomDown);
-    ctx.closePath();
-    ctx.fill();
-
-    // Downstream label
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
-    if (downLenPx > 40) ctx.fillText('DOWNSTREAM SMOKE', firePx + downLenPx * 0.5, tY + smokeDepthPx * 0.35 + 4);
-    ctx.restore();
-  }
-
-  // ── FIRE SOURCE ──
-  const fireFloorY = fY + (firePosX / m) * gradeY;
-  // Flame plume
-  const flameH = Math.min(tH * 0.7, 18 + hrr * 0.28);
-  for (let fi = 0; fi < 5; fi++) {
-    const fw = 8 + fi * 3;
-    const fh = flameH * (1 - fi * 0.15);
-    const flameGrad = ctx.createLinearGradient(firePx, fireFloorY - fh, firePx, fireFloorY);
-    flameGrad.addColorStop(0, fi < 2 ? 'rgba(255,200,50,0.0)' : 'rgba(255,100,20,0)');
-    flameGrad.addColorStop(0.4, fi < 2 ? 'rgba(255,180,30,0.8)' : 'rgba(255,80,10,0.7)');
-    flameGrad.addColorStop(1, 'rgba(255,50,0,0.9)');
-    ctx.fillStyle = flameGrad;
-    ctx.beginPath();
-    ctx.ellipse(firePx + (fi - 2) * 3, fireFloorY - fh / 2, fw / 2, fh / 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Fire icon + label
-  ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
-  ctx.fillText('🔥 '+hrrLabel, firePx, fireFloorY + 14);
-  ctx.fillStyle = '#ef4444'; ctx.font = '8px DM Mono';
-  ctx.fillText(hrr+' MW @ '+Math.round(firePosX)+'m', firePx, fireFloorY + 24);
-
-  // Dotted vertical ref line from fire to floor
-  ctx.strokeStyle = 'rgba(239,68,68,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-  ctx.beginPath(); ctx.moveTo(firePx, tY); ctx.lineTo(firePx, fY); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // ── JET FAN ARROWS (ventilation) ──
-  if (hasVent && (catGte('B') || ['longitudinal','transverse','semi_trans'].includes(D.vent))) {
+  // Jet fans (ceiling markers)
+  if (catGte('B') || ['longitudinal','transverse','semi_trans'].includes(D.vent)) {
     const jfData = window._jfData;
     const jfPositions = [];
     if (jfData && jfData.firstPos && jfData.interval) {
@@ -6741,109 +6809,237 @@ function drawLongitudinalSection(ctx, W, H) {
     } else {
       for (let pos = 125; pos < m; pos += 250) jfPositions.push(pos);
     }
-
     jfPositions.forEach(pos => {
       const jx = tX + pos * sc;
-      const jy = tY + 8;
-      // Fan symbol (small circle at ceiling)
-      ctx.fillStyle = '#10b981'; ctx.shadowColor = '#10b981'; ctx.shadowBlur = 6;
+      const jy = tY + (pos / m) * gradeY + 8;
+      const isActive = vcApp > 0;
+      ctx.fillStyle = isActive ? '#10b981' : '#4a7a6a';
+      ctx.shadowColor = isActive ? '#10b981' : 'transparent';
+      ctx.shadowBlur = isActive ? 8 : 0;
       ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+      // Fan blades
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1;
+      const rot = isActive ? (Date.now() * 0.004 * (vcApp / Math.max(vcCrit, 1))) % (Math.PI * 2) : 0;
       for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
-        ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx + Math.cos(a) * 5, jy + Math.sin(a) * 4); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(jx, jy);
+        ctx.lineTo(jx + Math.cos(a + rot) * 5, jy + Math.sin(a + rot) * 4);
+        ctx.stroke();
       }
-      // Airflow arrow → downstream
-      const arY = tY + tH * 0.72;
-      ctx.strokeStyle = 'rgba(16,185,129,0.65)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(jx - 18, arY); ctx.lineTo(jx + 22, arY); ctx.stroke();
-      ctx.fillStyle = 'rgba(16,185,129,0.65)';
-      ctx.beginPath(); ctx.moveTo(jx + 22, arY); ctx.lineTo(jx + 14, arY - 5); ctx.lineTo(jx + 14, arY + 5); ctx.closePath(); ctx.fill();
+      // Active airflow arrow
+      if (isActive) {
+        const arY = fY + (pos / m) * gradeY - tH * 0.28;
+        ctx.strokeStyle = 'rgba(16,185,129,0.6)'; ctx.fillStyle = 'rgba(16,185,129,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(jx - 14, arY); ctx.lineTo(jx + 18, arY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(jx + 18, arY); ctx.lineTo(jx + 11, arY - 4); ctx.lineTo(jx + 11, arY + 4); ctx.closePath(); ctx.fill();
+      }
     });
-
-    // Vc label
-    ctx.fillStyle = '#10b981'; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
-    ctx.fillText('VENTILASI AKTIF — Vc = '+vcApp.toFixed(1)+' m/s / Vc_kritis = '+vcCrit.toFixed(2)+' m/s',
-      tX + tW / 2, fY + 22);
-    const ratio = vcApp / vcCrit;
-    ctx.fillStyle = ratio >= 1 ? '#10b981' : ratio >= 0.7 ? '#f59e0b' : '#ef4444';
-    ctx.fillText(ratio >= 1 ? '✓ Kecepatan sudah mencapai/melebihi Vc kritis — backlayering teratasi'
-      : '⚠ Kecepatan < Vc kritis — backlayering masih terjadi', tX + tW / 2, fY + 35);
   }
 
-  // ── Fresh air zone annotation ──
-  const freshZoneY = fY - tH * 0.35;
-  if (!hasVent || vcApp < vcCrit) {
-    // Show fresh air only downstream side when no/partial vent
-    ctx.fillStyle = 'rgba(186,230,253,0.35)';
-    ctx.fillRect(tX, freshZoneY, firePosX * sc, fY - freshZoneY);
-    ctx.fillStyle = 'rgba(2,132,199,0.6)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
-    if (firePosX * sc > 30) ctx.fillText('UDARA SEGAR →', tX + firePosX * sc * 0.4, freshZoneY + 10);
-  } else {
-    // Full downstream fresh air (vent overcomes backlayering)
-    ctx.fillStyle = 'rgba(186,230,253,0.3)';
-    ctx.fillRect(tX, freshZoneY, tW, fY - freshZoneY);
-    ctx.fillStyle = 'rgba(2,132,199,0.7)'; ctx.font = 'bold 8px DM Mono'; ctx.textAlign = 'center';
-    ctx.fillText('→ SEMUA ALIRAN DOWNSTREAM (Ventilasi Efektif) →', tX + tW / 2, freshZoneY + 10);
-  }
-
-  // ── Title bar ──
-  ctx.fillStyle = '#1a1714'; ctx.fillRect(0, 0, W, PAD_T);
+  // Title bar
+  ctx.fillStyle = '#1B2A4A'; ctx.fillRect(0, 0, W, PAD_T);
   ctx.fillStyle = 'white'; ctx.font = 'bold 11px DM Mono,monospace'; ctx.textAlign = 'left';
-  ctx.fillText('POTONGAN MEMANJANG — '+(D.nama||'TEROWONGAN')+' · L='+m+'m · H='+H_cl+'m · Grade='+grade+'%', 10, 20);
-  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'right';
-  ctx.fillText('🔥 HRR '+hrr+' MW ('+hrrLabel+') · Vc='+(hasVent?vcApp.toFixed(1):'0.0')+'/'+vcCrit.toFixed(2)+'m/s · NFPA 502:2026', W - 10, 20);
+  ctx.fillText('POTONGAN MEMANJANG — '+(D.nama||'TEROWONGAN')+' · L='+m+'m · H='+(parseFloat(D.clearance)||5.0)+'m · Grade='+grade+'%', 10, 21);
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'right';
+  ctx.fillText('🔥 '+hrr+' MW ('+hrrLabel+') · Vc='+vcApp.toFixed(1)+'/'+vcCrit.toFixed(2)+' m/s · NFPA 502:2026', W - 10, 21);
 
-  // ── Scale bar ──
+  // HUD — bottom status bar
+  const hudY = H - PAD_B + 10;
+  ctx.fillStyle = 'rgba(27,42,74,0.85)';
+  if (ctx.roundRect) ctx.roundRect(PAD_L, hudY - 2, tW, 52, 4);
+  else ctx.rect(PAD_L, hudY - 2, tW, 52);
+  ctx.fill();
+
+  // Status indicators
+  const ratio = vcApp / vcCrit;
+  const statusCol = ratio >= 1 ? '#10b981' : ratio >= 0.6 ? '#f59e0b' : '#ef4444';
+  const statusTxt = ratio >= 1
+    ? '✓ Ventilasi efektif — backlayering teratasi — semua asap downstream'
+    : vcApp > 0
+    ? `⚠ Vc=${vcApp.toFixed(1)} m/s < Vc_kritis=${vcCrit.toFixed(2)} m/s — backlayering masih terjadi`
+    : '⚪ Tanpa ventilasi — asap menyebar upstream & downstream (backlayering)';
+
+  ctx.fillStyle = statusCol; ctx.font = 'bold 9px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText(statusTxt, PAD_L + tW / 2, hudY + 10);
+
+  // Mini Vc progress bar
+  const barW = Math.min(tW * 0.4, 240);
+  const barX = PAD_L + tW / 2 - barW / 2;
+  ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(barX, hudY + 18, barW, 8);
+  ctx.fillStyle = statusCol;
+  ctx.fillRect(barX, hudY + 18, barW * Math.min(ratio, 1), 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '7px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText('Vc: '+vcApp.toFixed(1)+' / '+vcCrit.toFixed(2)+' m/s  ('+Math.round(ratio*100)+'%)', PAD_L + tW / 2, hudY + 36);
+
+  // Scale bar
   const scaleBarM = m > 500 ? 200 : m > 200 ? 100 : 50;
   const scaleBarPx = scaleBarM * sc;
-  const sbX = W - PAD_R - scaleBarPx - 10;
-  const sbY = H - 16;
-  ctx.strokeStyle = '#1a1714'; ctx.lineWidth = 2; ctx.setLineDash([]);
+  const sbX = W - PAD_L - scaleBarPx - 6;
+  const sbY = tY - 20;
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
   ctx.beginPath();
   ctx.moveTo(sbX, sbY); ctx.lineTo(sbX + scaleBarPx, sbY);
   ctx.moveTo(sbX, sbY - 4); ctx.lineTo(sbX, sbY + 4);
   ctx.moveTo(sbX + scaleBarPx, sbY - 4); ctx.lineTo(sbX + scaleBarPx, sbY + 4);
   ctx.stroke();
-  ctx.fillStyle = '#1a1714'; ctx.font = '9px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = '9px DM Mono'; ctx.textAlign = 'center';
   ctx.fillText(scaleBarM + ' m', sbX + scaleBarPx / 2, sbY - 7);
 
-  // ── Grade label ──
-  ctx.fillStyle = '#374151'; ctx.font = '8px DM Mono'; ctx.textAlign = 'left';
-  ctx.fillText('Grade: '+(grade>0?'+':'')+grade+'%', tX + 4, fY - 4);
-
-  // ── H dimension ──
-  ctx.strokeStyle = '#374151'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(tX - 12, tY); ctx.lineTo(tX - 12, fY); ctx.stroke();
-  ctx.moveTo(tX - 16, tY); ctx.lineTo(tX - 8, tY); ctx.stroke();
-  ctx.moveTo(tX - 16, fY); ctx.lineTo(tX - 8, fY); ctx.stroke();
-  ctx.save(); ctx.translate(tX - 24, (tY + fY) / 2); ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#374151'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
-  ctx.fillText('H = '+H_cl+' m', 0, 0);
+  // H dimension
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(tX - 14, tY); ctx.lineTo(tX - 14, fY); ctx.stroke();
+  ctx.moveTo(tX - 18, tY); ctx.lineTo(tX - 10, tY); ctx.stroke();
+  ctx.moveTo(tX - 18, fY); ctx.lineTo(tX - 10, fY); ctx.stroke();
+  ctx.save(); ctx.translate(tX - 26, (tY + fY) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText('H=' + (parseFloat(D.clearance)||5.0) + 'm', 0, 0);
   ctx.restore();
 
-  // ── Fire position indicator at bottom ──
-  ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([4,3]);
-  ctx.beginPath(); ctx.moveTo(firePx, fY); ctx.lineTo(firePx, fY + 18); ctx.stroke();
+  // Fire position tick
+  ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(firePx, fY + gradeY * firePosRatio); ctx.lineTo(firePx, fY + gradeY * firePosRatio + 12); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#ef4444'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
-  ctx.fillText(Math.round(firePosX)+' m', firePx, fY + 28);
+  ctx.fillStyle = 'rgba(239,68,68,0.8)'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+  ctx.fillText(Math.round(_anim.firePosRatio * m) + ' m', firePx, fY + gradeY * firePosRatio + 22);
+}
 
-  // Legend box bottom-left
-  const legX = PAD_L, legY = H - PAD_B + 8;
-  const legItems = [
-    ['rgba(80,70,60,0.7)', 'Backlayering (asap ke upstream)'],
-    ['rgba(75,60,48,0.6)', 'Downstream smoke'],
-    ['rgba(186,230,253,0.7)', 'Zona udara segar'],
-    ['#10b981', 'Jet fan + arah aliran'],
-    ['#ef4444', 'Sumber kebakaran (HRR)'],
-  ];
-  legItems.forEach(([c, l], i) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(legX + i * 140, legY, 10, 10);
-    ctx.fillStyle = '#1a1714'; ctx.font = '8px DM Sans'; ctx.textAlign = 'left';
-    ctx.fillText(l, legX + i * 140 + 14, legY + 9);
+function _drawParticles(ctx) {
+  const { tX, tY, fY, tW, tH, gradeY } = _anim;
+
+  // ── Smoke particles ──
+  _smokeParticles.forEach(p => {
+    const localFloorY = fY + (p.x - tX) / tW * gradeY;
+    const localCeilY  = tY + (p.x - tX) / tW * gradeY;
+
+    // Clip to tunnel bounds
+    if (p.x < tX - 2 || p.x > tX + tW + 2) return;
+
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+    g.addColorStop(0, `rgba(120,105,88,${p.alpha * 0.85})`);
+    g.addColorStop(0.5, `rgba(90,80,65,${p.alpha * 0.5})`);
+    g.addColorStop(1, `rgba(60,50,40,0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
   });
+
+  // ── Flame particles ──
+  _flameParticles.forEach(p => {
+    const t = p.life / p.maxLife; // 0=birth, 1=death
+    const alpha = t < 0.15 ? t / 0.15 : 1 - t;
+    const r = p.size * (1 - t * 0.5);
+
+    let innerCol, outerCol;
+    if (p.hue === 'flame_yellow') {
+      innerCol = `rgba(255,240,80,${alpha * 0.95})`;
+      outerCol = `rgba(255,160,20,0)`;
+    } else {
+      innerCol = `rgba(255,140,20,${alpha * 0.9})`;
+      outerCol = `rgba(200,40,0,0)`;
+    }
+
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+    g.addColorStop(0, innerCol);
+    g.addColorStop(0.5, t < 0.5 ? `rgba(255,80,10,${alpha*0.6})` : `rgba(80,40,20,${alpha*0.3})`);
+    g.addColorStop(1, outerCol);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // ── Ember particles ──
+  _emberParticles.forEach(p => {
+    const t = p.life / p.maxLife;
+    const alpha = t < 0.1 ? t / 0.1 : (1 - t);
+    if (p.x < tX - 2 || p.x > tX + tW + 2) return;
+    ctx.fillStyle = `rgba(255,${Math.floor(100 + 80 * (1-t))},20,${alpha * 0.9})`;
+    ctx.shadowColor = 'rgba(255,120,20,0.6)'; ctx.shadowBlur = 4;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function _animLoop(timestamp) {
+  if (!_animRunning) return;
+  const dt = Math.min((timestamp - _animLastTime) / 1000, 0.05); // cap at 50ms
+  _animLastTime = timestamp;
+
+  const canvas = document.getElementById('diagram-canvas');
+  if (!canvas || currentDiagramView !== 'longitudinal_section') {
+    _stopAnimation();
+    return;
+  }
+
+  // Refresh layout every frame in case of resize
+  _updateAnimLayout(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  _stepParticles(dt);
+  _drawLongSectionStatic(ctx, _animW, _animH);
+  _drawParticles(ctx);
+
+  _animRAF = requestAnimationFrame(_animLoop);
+}
+
+function _updateAnimLayout(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = canvas.offsetWidth || 820;
+  const displayH = Math.round(displayW * (420 / 820));
+
+  if (canvas.width !== displayW * dpr || canvas.height !== displayH * dpr) {
+    canvas.width = displayW * dpr;
+    canvas.height = displayH * dpr;
+    canvas.style.height = displayH + 'px';
+  }
+
+  const m        = parseFloat(D.panjang_m) || 500;
+  const H_cl     = parseFloat(D.clearance) || 5.0;
+  const grade    = parseFloat(D.grade) || 0;
+  const PAD_L = 55, PAD_R = 30, PAD_T = 36, PAD_B = 70;
+  const tW    = displayW - PAD_L - PAD_R;
+  const tH    = Math.min((displayH - PAD_T - PAD_B) * 0.55, 110);
+  const tX    = PAD_L;
+  const tY    = PAD_T + (displayH - PAD_T - PAD_B) * 0.15;
+  const fY    = tY + tH;
+  const gradeOffsetY = (grade / 100) * tW * (grade >= 0 ? -1 : 1);
+  const sc    = tW / m;
+  const firePosRatio = _firePosRatio;
+  const firePx = tX + firePosRatio * m * sc;
+
+  _animW = displayW; _animH = displayH;
+  _anim = { tX, tY, fY, tW, tH, firePx, sc, m, gradeY: gradeOffsetY, PAD_L, PAD_T, PAD_B, firePosRatio };
+}
+
+function _startAnimation() {
+  if (_animRunning) return;
+  _animRunning = true;
+  const canvas = document.getElementById('diagram-canvas');
+  if (canvas) _updateAnimLayout(canvas);
+  _initParticles();
+  _animLastTime = performance.now();
+  _animRAF = requestAnimationFrame(_animLoop);
+}
+
+function _stopAnimation() {
+  _animRunning = false;
+  if (_animRAF) { cancelAnimationFrame(_animRAF); _animRAF = null; }
+}
+
+// ── LONGITUDINAL SECTION (POTONGAN MEMANJANG) ─────────────────────
+// Delegates to live particle animation engine — no static draw needed
+function drawLongitudinalSection(ctx, W, H) {
+  _stopAnimation();   // reset any running loop first
+  _initParticles();
+  _startAnimation();
+  const _unused = W; // suppress lint warning
+
 }
 
 
