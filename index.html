@@ -1924,7 +1924,7 @@ code {
 #diagram-canvas {
   display: block;
   width: 100% !important;
-  background: #1a1714;
+  background: transparent;
 }
 
 .diagram-legend {
@@ -6544,9 +6544,9 @@ let _animW = 0, _animH = 0;
 // ── LAYOUT HELPERS ──────────────────────────────────────────────────
 function _getLayout(canvas) {
   const dpr = window.devicePixelRatio || 1;
-  // Use actual rendered width; height fills the wrap with a natural aspect ratio
-  const W   = canvas.offsetWidth || 820;
-  const H   = Math.round(W * (340 / 820));   // taller ratio → fewer empty areas
+  // Read from parent to get true container width before canvas is fully laid out
+  const W = Math.round((canvas.parentElement ? canvas.parentElement.clientWidth : 0) || canvas.offsetWidth || 820);
+  const H = Math.round(W * (340 / 820));
   if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
@@ -6555,22 +6555,23 @@ function _getLayout(canvas) {
   const m    = parseFloat(D.panjang_m) || 500;
   const H_cl = parseFloat(D.clearance) || 5.0;
   const grade = parseFloat(D.grade) || 0;
-  const PAD_L=52, PAD_R=24, PAD_T=34, PAD_B=62;
-  const tW  = W - PAD_L - PAD_R;
-  // tH fills ~55% of available vertical space, min 80px, max 160px
+  // Minimal padding so tunnel fills as much canvas as possible
+  const PAD_L=48, PAD_R=16, PAD_T=34, PAD_B=58;
+  const tW   = W - PAD_L - PAD_R;
   const availH = H - PAD_T - PAD_B;
-  const tH  = Math.min(Math.max(availH * 0.58, 80), 160);
+  // Tunnel height: 60% of available, capped 80–170px
+  const tH  = Math.min(Math.max(availH * 0.60, 80), 170);
   const tX  = PAD_L;
-  // Center tunnel vertically in available space
-  const tY  = PAD_T + (availH - tH) * 0.22;
+  // Vertically centered in available space
+  const tY  = PAD_T + (availH - tH) * 0.18;
   const fY  = tY + tH;
-  // Grade: positive grade → exit side (right) is HIGHER → gradeY is negative (exit ceiling goes up)
+  // Grade: positive → exit (right) is higher, so right ceiling is lower in px (gradeY < 0)
   const gradeY = -(grade / 100) * tW;
-  const sc  = tW / m;
+  const sc   = tW / m;
   const firePosRatio = _firePosRatio || 0.33;
-  const firePx     = tX + firePosRatio * m * sc;
-  const fireFloorY = fY  + firePosRatio * gradeY;
-  const fireCeilY  = tY  + firePosRatio * gradeY;
+  const firePx      = tX + firePosRatio * m * sc;
+  const fireFloorY  = fY  + firePosRatio * gradeY;
+  const fireCeilY   = tY  + firePosRatio * gradeY;
   return { W, H, m, H_cl, grade, PAD_L, PAD_R, PAD_T, PAD_B, tW, tH, tX, tY, fY, gradeY, sc, firePx, fireFloorY, fireCeilY };
 }
 
@@ -6590,9 +6591,10 @@ class _Particle {
     this.life    = this.maxLife;
     this.alpha   = this.isFire ? (0.75 + Math.random() * 0.25) : (0.4 + Math.random() * 0.25);
     this.atCeil  = false;
-    // Each smoke particle independently goes upstream (-1) or downstream (+1)
-    // when there is no ventilation. As Vc increases, ventPush overwhelms backPush.
-    this._backDir = Math.random() < 0.5 ? 1 : 0; // 1=upstream particle, 0=downstream
+    // _backDir: +1 = this particle drifts UPSTREAM (toward inlet, negative X)
+    //           -1 = this particle drifts DOWNSTREAM (toward outlet, positive X)
+    // 50/50 split when no ventilation → bidirectional smoke spread
+    this._backDir = Math.random() < 0.5 ? 1 : -1;
   }
   update(L, vcApp, vcCrit) {
     this.life--;
@@ -6627,33 +6629,31 @@ class _Particle {
         this.vy = 0;
 
         // ── PHYSICS MODEL ───────────────────────────────────────────
-        // 1. Ventilation push (downstream = positive X direction)
+        // 1. Ventilation push: downstream = positive X
         const ventPush = vcApp * 2.0;
 
-        // 2. Backlayering: only occurs when vcApp < vcCrit.
-        //    Without ventilation (vcApp=0) smoke spreads BOTH ways:
-        //    each particle independently goes upstream or downstream
-        //    based on its spawn-time direction flag.
-        let backPush = 0;
-        if (vcApp < vcCrit) {
-          const deficit   = vcCrit - vcApp;
-          const band      = L.tH * 0.42;
-          const distCeil  = this.y - localCeil;
-          if (distCeil < band) {
-            // Strength of back-push proportional to how far below Vc kritis
-            const backStrength = deficit * 2.8 * (1 - distCeil / band);
-            // At vcApp=0: each particle has its own direction (set at spawn).
-            // As vcApp increases toward vcCrit, upstream particles get
-            // progressively overwhelmed by ventPush until backPush < ventPush.
-            backPush = -backStrength * this._backDir;
-          }
+        // 2. Natural bidirectional spread at Vc=0.
+        //    _backDir = +1  → particle assigned upstream  (push in -X direction)
+        //    _backDir = -1  → particle assigned downstream (push in +X direction)
+        //    Base natural speed without vent:
+        const naturalSpeed = 1.4; // px/frame base drift speed
+        let spreadPush = -this._backDir * naturalSpeed; // +1→negative(left), -1→positive(right)
+
+        // 3. As Vc increases, ventilation progressively overrides upstream particles.
+        //    When vcApp >= vcCrit, all spread pushed downstream (backpush =0).
+        let netPush;
+        if (vcApp >= vcCrit) {
+          netPush = ventPush; // full downstream
+        } else {
+          // Blend: ventilation fights against upstream spread proportionally
+          const ventFrac = vcApp / vcCrit; // 0..1
+          netPush = spreadPush * (1 - ventFrac) + ventPush * ventFrac;
         }
 
-        // 3. Grade bias: positive grade (uphill toward exit) gives slight
-        //    buoyancy-driven downstream push (hot smoke rises with slope).
-        const gradeBias = (L.grade / 100) * 0.8; // subtle, ~0.08 for 10% grade
+        // 4. Grade bias: uphill toward outlet → slight extra downstream buoyancy
+        const gradeBias = (L.grade / 100) * 0.8;
 
-        this.vx = ventPush + backPush + gradeBias + (Math.random() - 0.5) * 0.35;
+        this.vx = netPush + gradeBias + (Math.random() - 0.5) * 0.35;
         this.x += this.vx;
         this.size += 0.06;
       }
@@ -6691,13 +6691,17 @@ function _drawTunnelBg(ctx, L) {
 
   ctx.clearRect(0, 0, W, H);
 
-  // Exterior
-  const skyG = ctx.createLinearGradient(0, 0, 0, tY);
-  skyG.addColorStop(0,'#b8d4ee'); skyG.addColorStop(1,'#a8c4de');
+  // Full-canvas sky fill (covers any black gaps)
+  const skyG = ctx.createLinearGradient(0, 0, 0, H);
+  skyG.addColorStop(0, '#b8d4ee');
+  skyG.addColorStop((tY + tH * 0.5) / H, '#a8c4de');
+  skyG.addColorStop(1, '#b0a888');
   ctx.fillStyle = skyG; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#b0a888'; ctx.fillRect(0, fY + 6, W, H - fY - 6);
+
+  // Ground hatching below floor
+  ctx.fillStyle = '#b0a888'; ctx.fillRect(0, fY + 4, W, H - fY);
   ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.lineWidth = 1;
-  for (let x=-20;x<W;x+=12){ctx.beginPath();ctx.moveTo(x,fY+6);ctx.lineTo(x+18,H);ctx.stroke();}
+  for (let x=-20;x<W;x+=12){ctx.beginPath();ctx.moveTo(x,fY+4);ctx.lineTo(x+18,H);ctx.stroke();}
 
   // Tunnel lining
   ctx.fillStyle = '#585048';
