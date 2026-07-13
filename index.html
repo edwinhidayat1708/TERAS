@@ -5482,7 +5482,7 @@ function calcCV() {
 
   // ── Tenability & Jet Fan ─────────────────────────────
   buildTenabilityCheck(Q_total, T_f_final, Uc, A);
-  buildJetFanRec(Uc, A, Q_total, H);
+  buildJetFanRec(Uc, A, Q_total, H, Dh);
 
   // ── Chart ────────────────────────────────────────────
   drawCVChart(H, A, T_amb, 0.8, Uc, Q_total);
@@ -5511,24 +5511,58 @@ function buildTenabilityCheck(Q_MW, T_f, Vc, A) {
     <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-style:italic">⚠ Analisis tenabilitas ini bersifat estimasi kasar. Gunakan CFD 3D untuk verifikasi (NFPA 502:2026 Annex D). Batas radiasi 1.7 kW/m² direvisi dari 2.5 kW/m² di edisi 2026.</div>`;
 }
 
-function buildJetFanRec(Vc, A, Q_MW, H) {
+function buildJetFanRec(Vc, A, Q_MW, H, DhIn) {
   const el = document.getElementById('cv-jetfan');
   if (!el) return;
 
   const rho = parseFloat(document.getElementById('cv-rho')?.value) || 1.2;
+  const L = D.panjang_m ? parseFloat(D.panjang_m) : null;
+
+  // Dh: pakai nilai dari kalkulasi CV (konsisten geometri) jika tersedia,
+  // fallback ke estimasi kasar A/H hanya jika tidak dikirim.
+  const Dh = DhIn || (4 * A) / (2 * (A / H + H));
+
+  // Faktor gesekan dinding tunnel (beton finishing, PIARC 2019 §2.2 / referensi umum): 0.020–0.025
+  const lambda = 0.023;
+
+  // === 1) Momentum lokal: percepatan udara ke Vc + hambatan obstruksi lokal ===
   // F_loss: faktor hambatan ~1.5 (obstruksi standar) + koreksi HRR besar
   const F_loss = 1.5 + (Q_MW / 100) * 0.5;
+  const dP_momentum = rho * Vc * Vc * F_loss; // Pa
 
-  // Estimasi jumlah dengan dua ukuran fan tipikal
-  const nFans450 = Math.ceil((rho * A * Vc * Vc * F_loss) / 450);
-  const nFans700 = Math.ceil((rho * A * Vc * Vc * F_loss) / 700);
+  // === 2) Gesekan dinding sepanjang seluruh lintasan udara (KOMPONEN YANG SEBELUMNYA HILANG) ===
+  // ΔP_friction = λ × (L/Dh) × (ρ·Vc²/2)  — dominan untuk tunnel panjang, diabaikan untuk tunnel pendek
+  const dP_friction = (L && Dh) ? lambda * (L / Dh) * (rho * Vc * Vc / 2) : 0;
+
+  // Total tekanan yang harus diatasi sistem jet fan (Pa)
+  const dP_total = dP_momentum + dP_friction;
+
+  // Estimasi jumlah dengan dua ukuran fan tipikal (thrust bersih per unit)
+  const nFans450 = Math.ceil((dP_total * A) / 450);
+  const nFans700 = Math.ceil((dP_total * A) / 700);
   const nFinal = Math.max(nFans450, 1); // minimum 1 dari kalkulasi
 
   // Desain dengan redundansi N+1
   const nDesign = Math.max(nFinal + 1, 2); // minimal 2 unit (redundansi)
 
+  // Peringatan kesesuaian strategi ventilasi untuk tunnel sangat panjang.
+  // Longitudinal murni umumnya dipertanyakan di atas ~3000 m, terutama lalu lintas dua arah,
+  // karena asap terdorong melewati seluruh sisa panjang tunnel di hilir titik api.
+  // Contoh nyata: Terowongan Mont Blanc (11.6 km) pasca-kebakaran 1999 dibangun ulang
+  // dengan sistem semi-transverse + smoke extraction, bukan longitudinal murni.
+  const longitudinalWarning = (L && L > 3000)
+    ? `<div style="margin:6px 0;padding:8px 10px;background:rgba(181,28,24,0.08);border-left:3px solid var(--danger,#b51c18);border-radius:0 4px 4px 0;font-size:11px">
+        ⛔ <strong>Panjang tunnel ${L.toLocaleString('id-ID')} m — ventilasi longitudinal murni patut dipertanyakan.</strong>
+        Untuk tunnel sepanjang ini, strategi longitudinal (jet fan mendorong satu arah) berarti asap akan
+        terdorong melewati seluruh sisa panjang tunnel di hilir titik api, membahayakan kendaraan/pengguna di sana.
+        Praktik umum (PIARC 2019) mulai mempertimbangkan sistem transverse/semi-transverse dengan smoke extraction
+        begitu panjang tunnel jauh melampaui ±3.000 m, apalagi untuk lalu lintas dua arah.
+        Jumlah unit di bawah ini adalah estimasi murni berbasis momentum+gesekan untuk skenario longitudinal;
+        <strong>bukan rekomendasi bahwa longitudinal adalah strategi yang tepat untuk kasus ini.</strong>
+      </div>`
+    : '';
+
   // Interval ideal antar fan
-  const L = D.panjang_m ? parseFloat(D.panjang_m) : null;
   const interval450 = L ? Math.round(L / nDesign) : null;
 
   // Posisi jet fan pertama dari portal inlet
@@ -5563,11 +5597,14 @@ function buildJetFanRec(Vc, A, Q_MW, H) {
     <strong style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-family:'DM Mono',monospace">💨 Estimasi Kebutuhan Jet Fan (Ventilasi Longitudinal)</strong>
     <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:6px">
       <tr><td style="padding:3px 0;color:var(--text-muted)">Debit udara dibutuhkan (Q = Uc·A)</td><td style="font-family:'DM Mono',monospace;font-weight:700;text-align:right"><strong>${(Vc * A).toFixed(1)} m³/s</strong></td></tr>
-      <tr><td style="padding:3px 0;color:var(--text-muted)">Faktor hambatan (F_loss)</td><td style="font-family:'DM Mono',monospace;text-align:right">${F_loss.toFixed(2)}×</td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted)">ΔP momentum + obstruksi lokal (F_loss=${F_loss.toFixed(2)}×)</td><td style="font-family:'DM Mono',monospace;text-align:right">${dP_momentum.toFixed(1)} Pa</td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted)">ΔP gesekan dinding sepanjang tunnel (λ·L/Dh)${L ? '' : ' <span style="opacity:.6">— isi panjang tunnel</span>'}</td><td style="font-family:'DM Mono',monospace;text-align:right">${dP_friction.toFixed(1)} Pa</td></tr>
+      <tr><td style="padding:3px 0;color:var(--text-muted);font-weight:600">ΔP total sistem</td><td style="font-family:'DM Mono',monospace;font-weight:700;text-align:right">${dP_total.toFixed(1)} Pa</td></tr>
       <tr><td style="padding:3px 0;color:var(--text-muted)">Kalkulasi — thrust 450N (~30kW)</td><td style="font-family:'DM Mono',monospace;text-align:right"><strong>~${nFans450} unit</strong></td></tr>
       <tr><td style="padding:3px 0;color:var(--text-muted)">Kalkulasi — thrust 700N (~45kW)</td><td style="font-family:'DM Mono',monospace;text-align:right">~${nFans700} unit</td></tr>
       <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0 3px;font-weight:600">Rekomendasi desain (N+1 redundansi)</td><td style="font-family:'DM Mono',monospace;font-weight:700;text-align:right;color:var(--accent)"><strong>${nDesign} unit</strong></td></tr>
     </table>
+    ${longitudinalWarning}
     ${redundancyNote}
     ${positionInfo}
     <div style="font-size:10px;opacity:.65;margin-top:6px;font-style:italic">⚠ Estimasi awal berbasis pendekatan momentum. Desain final wajib menggunakan spesifikasi thrust aktual vendor dan diverifikasi melalui CFD 3D (NFPA 502:2026 Annex D §D.3). Thrust 450N = 30kW; 700N = 45kW — konfirmasi dengan vendor aktual.</div>`;
