@@ -1,0 +1,23 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 3 */3 * *'   # tiap 3 hari, jam 03:00 UTC (~10:00 WIB)
+  workflow_dispatch: {}
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+            "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_sessions?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat /tmp/response.txt
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "Request gagal, cek anon key atau RLS policy tabel teras_sessions"
+            exit 1
+          fi
