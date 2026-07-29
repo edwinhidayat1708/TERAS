@@ -2,22 +2,38 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: '0 3 */3 * *'   # tiap 3 hari, jam 03:00 UTC (~10:00 WIB)
+    - cron: '0 3 */2 * *'   # tiap 2 hari, jam 03:00 UTC (~10:00 WIB)
   workflow_dispatch: {}
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: Insert dummy row (real DB write activity)
         run: |
-          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
-            "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_sessions?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
-          echo "HTTP status: $HTTP_CODE"
-          cat /tmp/response.txt
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_audit_log" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d '{"action":"keepalive_ping","details":{"source":"github-actions"}}')
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Insert status: $HTTP_CODE"
+          echo "$BODY"
+
           if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "Request gagal, cek anon key atau RLS policy tabel teras_sessions"
+            echo "Insert gagal"
             exit 1
+          fi
+
+          ROW_ID=$(echo "$BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+          if [ -n "$ROW_ID" ]; then
+            curl -s -o /dev/null -w "Delete status: %{http_code}\n" \
+              -X DELETE \
+              "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_audit_log?id=eq.$ROW_ID" \
+              -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
           fi
