@@ -2,14 +2,21 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: '0 3 */2 * *'   # tiap 2 hari, jam 03:00 UTC (~10:00 WIB)
+    - cron: '0 3 * * *'   # SETIAP HARI, jam 03:00 UTC (~10:00 WIB)
   workflow_dispatch: {}
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Insert dummy row (real DB write activity)
+      - name: Ping 1 - Read sessions table
+        run: |
+          curl -s -o /dev/null -w "Select status: %{http_code}\n" \
+            "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_sessions?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+
+      - name: Ping 2 - Insert dummy row
         run: |
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_audit_log" \
@@ -30,10 +37,13 @@ jobs:
           fi
 
           ROW_ID=$(echo "$BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-          if [ -n "$ROW_ID" ]; then
-            curl -s -o /dev/null -w "Delete status: %{http_code}\n" \
-              -X DELETE \
-              "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_audit_log?id=eq.$ROW_ID" \
-              -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
-          fi
+          echo "ROW_ID=$ROW_ID" >> $GITHUB_ENV
+
+      - name: Ping 3 - Delete dummy row
+        if: env.ROW_ID != ''
+        run: |
+          curl -s -o /dev/null -w "Delete status: %{http_code}\n" \
+            -X DELETE \
+            "https://brqdjlxvjmveccumxjmv.supabase.co/rest/v1/teras_audit_log?id=eq.${{ env.ROW_ID }}" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
